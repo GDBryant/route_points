@@ -27,6 +27,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: supabase/setup-cli@v1
+      - run: supabase start
+      - name: Export Supabase env
+        run: |
+          eval "$(supabase status -o env)"
+          echo "VITE_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=$PUBLISHABLE_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
+          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
       - run: npm ci --legacy-peer-deps
       - run: npx playwright install --with-deps chromium
+      - run: npx supabase test db
       - run: npm run test:e2e

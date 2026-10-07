@@ -43,6 +43,7 @@ Test on a phone: run `npm run dev -- --host` and open the LAN URL over HTTPS (GP
 | `npm test` | Vitest unit tests |
 | `npm run test:e2e` | Playwright (mobile viewport, mocked Geolocation) |
 | `npx supabase test db` | pgTAP RLS/trigger tests |
+| `npx supabase gen types typescript --local > src/lib/database.types.ts` | Regenerate DB types |
 | `npx supabase db push` | Apply migrations |
 
 ## Run with Docker

@@ -16,3 +16,4 @@
 | 2026-10-07 | Share via link (WhatsApp-first), guests view without login | User spec |
 | 2026-10-07 | Route end snaps to point within 20 m (15–30 configurable) | User spec |
 | 2026-10-07 | Vitest + pgTAP + Playwright, full coverage | User spec |
+| 2026-10-07 | adventures_select allows owner_id=auth.uid() OR is_member; RLS helpers volatile | Postgrest runs insert+select in one statement snapshot — trigger-created membership row is invisible to a stable function |

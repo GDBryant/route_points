@@ -26,3 +26,116 @@ body,
 .follow-btn.active {
   background: #2e7d32;
 }
+
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+button,
+.button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #1e3a5f;
+  border-color: #1e3a5f;
+  color: #fff;
+}
+
+input {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.card.latest {
+  border-color: #1e3a5f;
+  border-width: 2px;
+}
+
+.card a {
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}
+
+.muted {
+  color: #888;
+  font-size: 14px;
+}
+
+.error {
+  color: #c62828;
+}
+
+.bottom-actions {
+  position: sticky;
+  bottom: 16px;
+  margin-top: 24px;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+  padding: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: #1e3a5f;
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+}
