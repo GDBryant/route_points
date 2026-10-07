@@ -55,4 +55,33 @@ describe('AddPointSheet', () => {
       }),
     )
   })
+
+  it('edit mode submits same client_id', () => {
+    const onSave = vi.fn()
+    const initial = {
+      id: 'p9',
+      client_id: 'cid-9',
+      name: 'Obstacle 9',
+      kind: 'camp',
+      seq: 9,
+      lat: -33.5,
+      lng: 18.4,
+      note: 'old note',
+    }
+    render(
+      <AddPointSheet
+        lat={-33.5}
+        lng={18.4}
+        points={[]}
+        initial={initial}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Edit point')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Save'))
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ client_id: 'cid-9', kind: 'camp' }),
+    )
+  })
 })

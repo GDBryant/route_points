@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 
 export interface Point {
   id: string
+  client_id?: string
   name: string
   kind: string
   seq: number | null
@@ -25,7 +26,7 @@ export interface PointInput {
 export async function listPoints(adventureId: string): Promise<Point[]> {
   const { data, error } = await supabase
     .from('points')
-    .select('id, name, kind, seq, lat, lng, note')
+    .select('id, client_id, name, kind, seq, lat, lng, note')
     .eq('adventure_id', adventureId)
     .order('seq', { nullsFirst: false })
     .order('name')

@@ -12,6 +12,9 @@ import 'leaflet/dist/leaflet.css'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
 import PointMarker from '@/features/points/PointMarker'
 import type { Point } from '@/features/points/api'
+import RoutePolyline from '@/features/routes/RoutePolyline'
+import type { RouteRow } from '@/features/routes/api'
+import { Polyline } from 'react-leaflet'
 
 const DEFAULT_CENTER: [number, number] = [-33.56, 18.48]
 const ESRI_URL =
@@ -68,14 +71,20 @@ function FlyTo({ target }: { target: { lat: number; lng: number; t: number } | n
 
 export default function MapView({
   points = [],
+  routes = [],
+  recordingCoords = [],
   onMarkerTap,
+  onRouteTap,
   onLongPress,
   flyTo,
   position = null,
   error = null,
 }: {
   points?: Point[]
+  routes?: RouteRow[]
+  recordingCoords?: { lat: number; lng: number }[]
   onMarkerTap?: (p: Point) => void
+  onRouteTap?: (r: RouteRow) => void
   onLongPress?: (lat: number, lng: number) => void
   flyTo?: { lat: number; lng: number; t: number } | null
   position?: GeoPosition | null
@@ -104,6 +113,15 @@ export default function MapView({
         {points.map((p) => (
           <PointMarker key={p.id} point={p} onTap={(pt) => onMarkerTap?.(pt)} />
         ))}
+        {routes.map((r) => (
+          <RoutePolyline key={r.id} route={r} onTap={onRouteTap} />
+        ))}
+        {recordingCoords.length > 1 && (
+          <Polyline
+            positions={recordingCoords.map((c) => [c.lat, c.lng] as [number, number])}
+            pathOptions={{ color: '#7b3fb3', weight: 3, dashArray: '6 8' }}
+          />
+        )}
         <FollowMe position={position} following={following} />
         <LongPress onLongPress={onLongPress} />
         <FlyTo target={flyTo ?? null} />

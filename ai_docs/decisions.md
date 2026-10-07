@@ -19,3 +19,5 @@
 | 2026-10-07 | adventures_select allows owner_id=auth.uid() OR is_member; RLS helpers volatile | Postgrest runs insert+select in one statement snapshot — trigger-created membership row is invisible to a stable function |
 | 2026-10-07 | points writes via upsert_point RPC (client_id dedupe) | Idempotent offline outbox replay for M4 |
 | 2026-10-07 | points replica identity full | Realtime DELETE events need old.id |
+| 2026-10-07 | waypoints NOT in realtime; batched via add_waypoints (10 wp / 30 s) | Volume too high for realtime; routes table events trigger coord refetch |
+| 2026-10-07 | upsert_route on record start, not just finish | add_waypoints needs existing route row (looked up by client_id) |

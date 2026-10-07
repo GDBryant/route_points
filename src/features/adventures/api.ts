@@ -101,6 +101,30 @@ export async function listMembers(adventureId: string): Promise<Member[]> {
   }))
 }
 
+export async function getAdventure(id: string): Promise<{
+  id: string
+  name: string
+  description: string
+  share_token: string
+  snap_radius_m: number
+}> {
+  const { data, error } = await supabase
+    .from('adventures')
+    .select('id, name, description, share_token, snap_radius_m')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return { ...data, description: data.description ?? '' }
+}
+
+export async function updateAdventure(
+  id: string,
+  patch: { name?: string; snap_radius_m?: number },
+): Promise<void> {
+  const { error } = await supabase.from('adventures').update(patch).eq('id', id)
+  if (error) throw error
+}
+
 export async function myRole(adventureId: string): Promise<string | null> {
   const {
     data: { user },

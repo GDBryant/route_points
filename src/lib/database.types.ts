@@ -109,6 +109,44 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"routes": {
+                  Row: {
+                    "adventure_id": string,"client_id": string,"created_at": string | null,"created_by": string,"direction": string,"ended_at": string | null,"from_point_id": string | null,"id": string,"interval_s": number | null,"mode": string,"name": string,"started_at": string,"to_point_id": string | null,"updated_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "adventure_id": string,"client_id": string,"created_at"?: string | null,"created_by"?: string,"direction"?: string,"ended_at"?: string | null,"from_point_id"?: string | null,"id"?: string,"interval_s"?: number | null,"mode": string,"name"?: string,"started_at"?: string,"to_point_id"?: string | null,"updated_at"?: string | null
+                  }
+                  Update: {
+                    "adventure_id"?: string,"client_id"?: string,"created_at"?: string | null,"created_by"?: string,"direction"?: string,"ended_at"?: string | null,"from_point_id"?: string | null,"id"?: string,"interval_s"?: number | null,"mode"?: string,"name"?: string,"started_at"?: string,"to_point_id"?: string | null,"updated_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "routes_adventure_id_fkey"
+      columns: ["adventure_id"]
+isOneToOne: false
+      referencedRelation: "adventures"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "routes_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "routes_from_point_id_fkey"
+      columns: ["from_point_id"]
+isOneToOne: false
+      referencedRelation: "points"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "routes_to_point_id_fkey"
+      columns: ["to_point_id"]
+isOneToOne: false
+      referencedRelation: "points"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"spatial_ref_sys": {
                   Row: {
                     "auth_name": string | null,"auth_srid": number | null,"proj4text": string | null,"srid": number,"srtext": string | null
@@ -122,6 +160,32 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"waypoints": {
+                  Row: {
+                    "accuracy_m": number | null,"client_id": string,"geog": unknown,"id": number,"lat": number | null,"lng": number | null,"recorded_at": string,"route_id": string,"seq": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accuracy_m"?: number | null,"client_id": string,"geog": unknown,"id"?: never,"lat"?: never,"lng"?: never,"recorded_at": string,"route_id": string,"seq": number
+                  }
+                  Update: {
+                    "accuracy_m"?: number | null,"client_id"?: string,"geog"?: unknown,"id"?: never,"lat"?: never,"lng"?: never,"recorded_at"?: string,"route_id"?: string,"seq"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "waypoints_route_id_fkey"
+      columns: ["route_id"]
+isOneToOne: false
+      referencedRelation: "routes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "waypoints_route_id_fkey"
+      columns: ["route_id"]
+isOneToOne: false
+      referencedRelation: "routes_with_coords"
+      referencedColumns: ["id"]
+    }
                   ]
                 }
           }
@@ -147,6 +211,38 @@ isOneToOne: false
                          }
                         Relationships: [
                     
+                  ]
+                },"routes_with_coords": {
+                  Row: {
+                    "adventure_id": string | null,"client_id": string | null,"coords": Json | null,"direction": string | null,"ended_at": string | null,"from_point_id": string | null,"id": string | null,"interval_s": number | null,"mode": string | null,"name": string | null,"started_at": string | null,"to_point_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                           "adventure_id"?: string | null,"client_id"?: string | null,"coords"?: never,"direction"?: string | null,"ended_at"?: string | null,"from_point_id"?: string | null,"id"?: string | null,"interval_s"?: number | null,"mode"?: string | null,"name"?: string | null,"started_at"?: string | null,"to_point_id"?: string | null
+                         }
+                        Update: {
+                           "adventure_id"?: string | null,"client_id"?: string | null,"coords"?: never,"direction"?: string | null,"ended_at"?: string | null,"from_point_id"?: string | null,"id"?: string | null,"interval_s"?: number | null,"mode"?: string | null,"name"?: string | null,"started_at"?: string | null,"to_point_id"?: string | null
+                         }
+                        Relationships: [
+                    {
+      foreignKeyName: "routes_adventure_id_fkey"
+      columns: ["adventure_id"]
+isOneToOne: false
+      referencedRelation: "adventures"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "routes_from_point_id_fkey"
+      columns: ["from_point_id"]
+isOneToOne: false
+      referencedRelation: "points"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "routes_to_point_id_fkey"
+      columns: ["to_point_id"]
+isOneToOne: false
+      referencedRelation: "points"
+      referencedColumns: ["id"]
+    }
                   ]
                 }
           }
@@ -226,6 +322,9 @@ isOneToOne: false
                            },
 "_st_within":
 { Args: { "geom1": unknown,"geom2": unknown }; Returns: boolean
+                           },
+"add_waypoints":
+{ Args: { "route_client_id": string,"wps": Json }; Returns: number
                            },
 "addauth":
 { Args: { "": string }; Returns: boolean
@@ -346,6 +445,11 @@ isOneToOne: false
 "get_adventure_points":
 { Args: { "token": string }; Returns: {
               "id": string,"kind": string,"lat": number,"lng": number,"name": string,"note": string,"seq": number
+            }[]
+                           },
+"get_adventure_routes":
+{ Args: { "token": string }; Returns: {
+              "coords": Json,"direction": string,"from_point_id": string,"id": string,"name": string,"to_point_id": string
             }[]
                            },
 "gettransactionid":
@@ -939,6 +1043,29 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "points"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"upsert_route":
+{ Args: { "r": Json }; Returns: {
+              "adventure_id": string,
+"client_id": string,
+"created_at": string | null,
+"created_by": string,
+"direction": string,
+"ended_at": string | null,
+"from_point_id": string | null,
+"id": string,
+"interval_s": number | null,
+"mode": string,
+"name": string,
+"started_at": string,
+"to_point_id": string | null,
+"updated_at": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "routes"
         isOneToOne: true
         isSetofReturn: false
       } }
