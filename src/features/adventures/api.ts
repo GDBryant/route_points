@@ -75,3 +75,42 @@ export async function getByToken(token: string): Promise<AdventureStub | null> {
 export async function touchAdventure(id: string): Promise<void> {
   await supabase.rpc('touch_adventure', { aid: id })
 }
+
+export interface Member {
+  user_id: string
+  role: string
+  display_name: string
+  colour: string
+}
+
+export async function listMembers(adventureId: string): Promise<Member[]> {
+  const { data, error } = await supabase
+    .from('adventure_members')
+    .select('user_id, role, profiles(display_name, colour)')
+    .eq('adventure_id', adventureId)
+  if (error) throw error
+  return (data ?? []).map((m) => ({
+    user_id: m.user_id,
+    role: m.role,
+    display_name:
+      (m.profiles as unknown as { display_name: string } | null)
+        ?.display_name ?? '',
+    colour:
+      (m.profiles as unknown as { colour: string } | null)?.colour ??
+      '#1e88e5',
+  }))
+}
+
+export async function myRole(adventureId: string): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase
+    .from('adventure_members')
+    .select('role')
+    .eq('adventure_id', adventureId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  return data?.role ?? null
+}

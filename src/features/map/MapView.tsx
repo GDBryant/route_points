@@ -6,10 +6,12 @@ import {
   MapContainer,
   TileLayer,
   useMap,
+  useMapEvents,
 } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useGeolocation } from '@/features/tracking/useGeolocation'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
+import PointMarker from '@/features/points/PointMarker'
+import type { Point } from '@/features/points/api'
 
 const DEFAULT_CENTER: [number, number] = [-33.56, 18.48]
 const ESRI_URL =
@@ -49,8 +51,36 @@ function FollowMe({
   return null
 }
 
-export default function MapView() {
-  const { position, error } = useGeolocation()
+function LongPress({ onLongPress }: { onLongPress?: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    contextmenu: (e) => onLongPress?.(e.latlng.lat, e.latlng.lng),
+  })
+  return null
+}
+
+function FlyTo({ target }: { target: { lat: number; lng: number; t: number } | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 15))
+  }, [target, map])
+  return null
+}
+
+export default function MapView({
+  points = [],
+  onMarkerTap,
+  onLongPress,
+  flyTo,
+  position = null,
+  error = null,
+}: {
+  points?: Point[]
+  onMarkerTap?: (p: Point) => void
+  onLongPress?: (lat: number, lng: number) => void
+  flyTo?: { lat: number; lng: number; t: number } | null
+  position?: GeoPosition | null
+  error?: string | null
+}) {
   const [following, setFollowing] = useState(true)
 
   return (
@@ -71,7 +101,12 @@ export default function MapView() {
           </LayersControl.BaseLayer>
         </LayersControl>
         <CurrentPositionMarker position={position} />
+        {points.map((p) => (
+          <PointMarker key={p.id} point={p} onTap={(pt) => onMarkerTap?.(pt)} />
+        ))}
         <FollowMe position={position} following={following} />
+        <LongPress onLongPress={onLongPress} />
+        <FlyTo target={flyTo ?? null} />
       </MapContainer>
       <button
         className={`follow-btn${following ? ' active' : ''}`}

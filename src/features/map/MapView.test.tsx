@@ -17,7 +17,9 @@ vi.mock('react-leaflet', () => ({
       ),
     },
   ),
-  useMap: () => ({ setView: vi.fn() }),
+  useMap: () => ({ setView: vi.fn(), flyTo: vi.fn(), getZoom: () => 14 }),
+  useMapEvents: () => undefined,
+  Marker: () => null,
 }))
 
 vi.mock('@/features/tracking/useGeolocation', () => ({

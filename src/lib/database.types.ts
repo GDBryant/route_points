@@ -69,6 +69,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"points": {
+                  Row: {
+                    "accuracy_m": number | null,"adventure_id": string,"client_id": string,"created_at": string | null,"created_by": string,"geog": unknown,"id": string,"kind": string,"lat": number | null,"lng": number | null,"name": string,"note": string | null,"seq": number | null,"updated_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accuracy_m"?: number | null,"adventure_id": string,"client_id": string,"created_at"?: string | null,"created_by"?: string,"geog": unknown,"id"?: string,"kind"?: string,"lat"?: never,"lng"?: never,"name": string,"note"?: string | null,"seq"?: number | null,"updated_at"?: string | null
+                  }
+                  Update: {
+                    "accuracy_m"?: number | null,"adventure_id"?: string,"client_id"?: string,"created_at"?: string | null,"created_by"?: string,"geog"?: unknown,"id"?: string,"kind"?: string,"lat"?: never,"lng"?: never,"name"?: string,"note"?: string | null,"seq"?: number | null,"updated_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "points_adventure_id_fkey"
+      columns: ["adventure_id"]
+isOneToOne: false
+      referencedRelation: "adventures"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "points_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "colour": string,"created_at": string | null,"display_name": string,"id": string
@@ -315,6 +341,11 @@ isOneToOne: false
 "get_adventure_by_token":
 { Args: { "token": string }; Returns: {
               "description": string,"id": string,"name": string,"snap_radius_m": number
+            }[]
+                           },
+"get_adventure_points":
+{ Args: { "token": string }; Returns: {
+              "id": string,"kind": string,"lat": number,"lng": number,"name": string,"note": string,"seq": number
             }[]
                            },
 "gettransactionid":
@@ -887,7 +918,30 @@ isOneToOne: false
                            },
 "updategeometrysrid":
 { Args: { "catalogn_name": string,"column_name": string,"new_srid_in": number,"schema_name": string,"table_name": string }; Returns: string
-                           }
+                           },
+"upsert_point":
+{ Args: { "p": Json }; Returns: {
+              "accuracy_m": number | null,
+"adventure_id": string,
+"client_id": string,
+"created_at": string | null,
+"created_by": string,
+"geog": unknown,
+"id": string,
+"kind": string,
+"lat": number | null,
+"lng": number | null,
+"name": string,
+"note": string | null,
+"seq": number | null,
+"updated_at": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "points"
+        isOneToOne: true
+        isSetofReturn: false
+      } }
           }
           Enums: {
             [_ in never]: never
