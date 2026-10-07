@@ -27,3 +27,6 @@
 | 2026-10-07 | Auto recording: drop iff interval elapsed AND moved ≥5 m | Movement alone ignored interval; stationary skips |
 | 2026-10-07 | Positions via Realtime broadcast (public channel), not postgres_changes | No DB write per tick; free-tier friendly |
 | 2026-10-07 | Broadcast 5 s + DB persist 30 s via outbox latest-wins | Balance freshness vs write volume |
+| 2026-10-07 | GPX: wpt→point (type→kind), trk→route manual; import goes through outbox | Works offline; client_id dedupe |
+| 2026-10-07 | Cloudflare Pages primary host (Netlify fallback) | Free unlimited bandwidth |
+| 2026-10-07 | Weekly keepalive workflow pings Supabase REST | Free-tier projects pause after ~7 d idle |

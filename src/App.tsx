@@ -13,6 +13,8 @@ import SettingsPage from '@/features/auth/SettingsPage'
 import AdventuresPage from '@/features/adventures/AdventuresPage'
 import JoinPage from '@/features/adventures/JoinPage'
 import MapPage from '@/features/map/MapPage'
+import UpdateToast from '@/features/pwa/UpdateToast'
+import ErrorBoundary from '@/features/pwa/ErrorBoundary'
 
 function Home() {
   const { user, loading } = useAuth()
@@ -33,7 +35,8 @@ function MapRoute() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
@@ -56,7 +59,9 @@ export default function App() {
             }
           />
         </Routes>
-      </AuthProvider>
+        </AuthProvider>
+        <UpdateToast />
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

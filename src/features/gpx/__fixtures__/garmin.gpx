@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Garmin Basecamp" xmlns="http://www.topografix.com/GPX/1/1">
+<metadata><name>Atlantis Test</name></metadata>
+  <wpt lat="-33.5600" lon="18.4800"><name>Obstacle 1</name><type>obstacle</type><desc>deep sand</desc></wpt>
+  <wpt lat="-33.5650" lon="18.4850"><name>Camp &amp; Kitchen</name><type>camp</type></wpt>
+  <wpt lat="-33.5700" lon="18.4900"><name>Gate "A"</name><type>entrance</type></wpt>
+  <trk><name>Approach</name><desc>direction:forward:Gate→Obstacle</desc>
+    <trkseg>
+      <trkpt lat="-33.5700" lon="18.4900"><time>2026-10-07T08:00:00Z</time></trkpt>
+      <trkpt lat="-33.5650" lon="18.4840"><time>2026-10-07T08:05:00Z</time></trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="-33.5620" lon="18.4820"><time>2026-10-07T08:08:00Z</time></trkpt>
+      <trkpt lat="-33.5600" lon="18.4800"><time>2026-10-07T08:10:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

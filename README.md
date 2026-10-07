@@ -56,8 +56,14 @@ VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are passed as build args. Backend run
 Points and routes are written to a local IndexedDB (Dexie) outbox and synced to Supabase in FIFO order on reconnect (drain also runs every 30 s, on tab focus, and after each enqueue while online). Failed items retry 5 times then appear under the sync badge for retry/discard. Map tiles for an adventure's bounds can be prefetched (Settings → Offline maps): OpenStreetMap capped at 2500 tiles per adventure (OSM tile-usage policy — bulk downloads must be modest), Esri imagery at 8000, zooms 12–16.
 
 ## Deploy
-- Frontend: Vercel or Netlify (build `npm run build`, output `dist/`)
-- Backend: Supabase cloud project; set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` in host env; `npx supabase link && npx supabase db push`
+1. **Supabase cloud**: create a project at supabase.com → `SUPABASE_PROJECT_REF=<ref> npx supabase login` → `./scripts/deploy-db.sh` (link + push, `--types` to regen `database.types.ts`). In dashboard → Auth: set **Site URL** to your domain, add redirect URLs (`https://your.domain/*`), enable email magic link and Google OAuth (Credentials → create OAuth client, paste ID/secret). Realtime is on by default; broadcast/presence used for live positions.
+2. **Frontend (Cloudflare Pages)**: connect the GitHub repo → build command `npm ci --legacy-peer-deps && npm run build`, output dir `dist`, env vars `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`, Node 20. `public/_redirects` (SPA) and `_headers` (no-cache on sw.js/index.html, immutable assets) ship automatically. Netlify alternative: `netlify.toml` already covers build/redirects/headers.
+3. **GitHub secrets** for CI + keepalive: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY` (from `npx supabase status -o env` locally, or dashboard → API for cloud).
+4. **Docker** (local/self-host): `docker compose up --build` → http://localhost:8080.
+
+### Free tier limits & costs
+- Supabase free: 500 MB DB, 200 realtime connections, 2M messages/mo; project **pauses after ~7 days idle** → `.github/workflows/keepalive.yml` pings weekly (set `SUPABASE_URL`/`SUPABASE_ANON_KEY` secrets).
+- Cloudflare Pages free: unlimited bandwidth, 500 builds/mo.
 
 ## Layout
 ```

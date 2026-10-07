@@ -37,6 +37,8 @@ import RoutesList from '@/features/routes/RoutesList'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
 import DownloadTilesSheet from '@/features/tiles/DownloadTilesSheet'
 import { adventureBbox } from '@/features/tiles/tileMath'
+import GpxSheet from '@/features/gpx/GpxSheet'
+import { toGpx } from '@/features/gpx/gpx'
 
 type Tab = 'map' | 'points' | 'routes' | 'members'
 
@@ -87,6 +89,7 @@ export default function MapPage() {
   } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showTiles, setShowTiles] = useState(false)
+  const [showGpx, setShowGpx] = useState(false)
   const [headingUp, setHeadingUp] = useState(false)
   const [navTarget, setNavTarget] = useState<Point | null>(null)
   const [sharePos, setSharePos] = useState(
@@ -236,6 +239,26 @@ export default function MapPage() {
     localStorage.setItem('sharePos', next ? 'on' : 'off')
   }
 
+  const exportGpx = async () => {
+    const xml = toGpx({ name: adv?.name ?? 'adventure' }, points, routes)
+    const file = new File([xml], `${adv?.name ?? 'adventure'}.gpx`, {
+      type: 'application/gpx+xml',
+    })
+    const nav = navigator as Navigator & {
+      canShare?: (d: { files: File[] }) => boolean
+    }
+    if (nav.canShare?.({ files: [file] }))
+      await navigator.share({ files: [file] }).catch(() => {})
+    else {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(file)
+      a.download = file.name
+      a.click()
+      URL.revokeObjectURL(a.href)
+    }
+    setShowSettings(false)
+  }
+
   const recordingCoords = recorder.pendingCoords.map(
     ([lng, lat]) => ({ lat, lng }) as const,
   )
@@ -271,9 +294,42 @@ export default function MapPage() {
         <div className="panel overlay">
           <PointsList
             points={points}
+            isEditor={isEditor}
             onTap={(p) => {
               setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() })
               setTab('map')
+            }}
+            onMove={(p, dir) => {
+              const sorted = [...points].sort(
+                (a, b) =>
+                  (a.seq ?? 9999) - (b.seq ?? 9999) ||
+                  a.name.localeCompare(b.name),
+              )
+              const i = sorted.findIndex((x) => x.id === p.id)
+              const other = sorted[i + dir]
+              if (!other) return
+              const seqA = p.seq ?? i + 1
+              const seqB = other.seq ?? i + 1 + dir
+              savePointLocal(id, {
+                name: p.name,
+                kind: p.kind,
+                note: p.note ?? '',
+                seq: seqB,
+                accuracy_m: null,
+                lat: p.lat,
+                lng: p.lng,
+                client_id: p.client_id,
+              })
+              savePointLocal(id, {
+                name: other.name,
+                kind: other.kind,
+                note: other.note ?? '',
+                seq: seqA,
+                accuracy_m: null,
+                lat: other.lat,
+                lng: other.lng,
+                client_id: other.client_id,
+              })
             }}
           />
         </div>
@@ -474,11 +530,32 @@ export default function MapPage() {
           }}
           sharePos={sharePos}
           onToggleShare={isEditor ? toggleSharePos : undefined}
+          onExportGpx={() => exportGpx()}
+          onImportGpx={
+            isEditor
+              ? () => {
+                  setShowSettings(false)
+                  setShowGpx(true)
+                }
+              : undefined
+          }
           onOfflineMaps={() => {
             setShowSettings(false)
             setShowTiles(true)
           }}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showGpx && (
+        <GpxSheet
+          adventureId={id}
+          isEditor={isEditor}
+          onClose={() => setShowGpx(false)}
+          onDone={() => {
+            refresh()
+            refreshRoutes()
+          }}
         />
       )}
 

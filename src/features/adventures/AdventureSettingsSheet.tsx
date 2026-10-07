@@ -8,6 +8,8 @@ export default function AdventureSettingsSheet({
   onOfflineMaps,
   sharePos,
   onToggleShare,
+  onExportGpx,
+  onImportGpx,
   onClose,
 }: {
   adventure: { id: string; name: string; snap_radius_m: number }
@@ -16,6 +18,8 @@ export default function AdventureSettingsSheet({
   onOfflineMaps?: () => void
   sharePos?: boolean
   onToggleShare?: () => void
+  onExportGpx?: () => void
+  onImportGpx?: () => void
   onClose: () => void
 }) {
   const [name, setName] = useState(adventure.name)
@@ -66,6 +70,16 @@ export default function AdventureSettingsSheet({
             />
             Share my position
           </label>
+        )}
+        {onExportGpx && (
+          <button type="button" onClick={onExportGpx}>
+            Export GPX
+          </button>
+        )}
+        {onImportGpx && (
+          <button type="button" onClick={onImportGpx}>
+            Import GPX
+          </button>
         )}
         <button type="submit" className="primary">
           Done
