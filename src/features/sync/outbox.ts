@@ -7,12 +7,21 @@ import {
   type RouteInput,
   type WaypointInput,
 } from '@/features/routes/api'
+import {
+  upsertPosition,
+  type PositionInput,
+} from '@/features/live/api'
 
 export const MAX_ATTEMPTS = 5
 
 let drainScheduled = false
 
 export async function enqueue(kind: OutboxKind, payload: unknown) {
+  if (kind === 'upsert_position')
+    await db.outbox
+      .where('kind')
+      .equals(kind)
+      .delete()
   await db.outbox.add({
     kind,
     payload,
@@ -52,6 +61,8 @@ async function run(item: OutboxItem): Promise<unknown> {
       )
     case 'delete_route':
       return deleteRoute(p.id as string)
+    case 'upsert_position':
+      return upsertPosition(p as unknown as PositionInput)
   }
 }
 
@@ -155,6 +166,10 @@ async function reconcile(item: OutboxItem, result: unknown) {
       })
     }
   }
+}
+
+export async function enqueuePosition(payload: PositionInput) {
+  await enqueue('upsert_position', payload)
 }
 
 export async function pendingCount(): Promise<number> {

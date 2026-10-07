@@ -25,3 +25,5 @@
 | 2026-10-07 | Outbox: FIFO, server errors retry until 5 (dead), drain rewrites temp point ids → server ids in dependent payloads | FK violations when route references unsynced point |
 | 2026-10-07 | Tile caps OSM 2500 / Esri 8000, zoom 12–16 (UI 13–17) | OSM ToS bulk-download policy |
 | 2026-10-07 | Auto recording: drop iff interval elapsed AND moved ≥5 m | Movement alone ignored interval; stationary skips |
+| 2026-10-07 | Positions via Realtime broadcast (public channel), not postgres_changes | No DB write per tick; free-tier friendly |
+| 2026-10-07 | Broadcast 5 s + DB persist 30 s via outbox latest-wins | Balance freshness vs write volume |

@@ -72,6 +72,16 @@ describe('outbox', () => {
     expect(upsertPoint).toHaveBeenCalledTimes(MAX_ATTEMPTS)
   })
 
+  it('upsert_position is latest-wins (replaces pending)', async () => {
+    const pos1 = { adventure_id: 'a', user_id: 'u', lat: 1, lng: 1 }
+    const pos2 = { ...pos1, lat: 2, lng: 2 }
+    await enqueue('upsert_position', pos1)
+    await enqueue('upsert_position', pos2)
+    const items = await db.outbox.toArray()
+    expect(items).toHaveLength(1)
+    expect((items[0].payload as { lat: number }).lat).toBe(2)
+  })
+
   it('successful upsert_route replaces temp row by client_id', async () => {
     const cid = crypto.randomUUID()
     await db.routes.put({

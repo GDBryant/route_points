@@ -17,6 +17,7 @@ export type OutboxKind =
   | 'upsert_route'
   | 'add_waypoints'
   | 'delete_route'
+  | 'upsert_position'
 
 export interface OutboxItem {
   id?: number
@@ -50,8 +51,11 @@ export class RoutePointsDB extends Dexie {
       adventures: 'id',
       points: 'id, client_id, adventure_id',
       routes: 'id, client_id, adventure_id',
-      outbox: '++id, created_at, attempts',
+      outbox: '++id, created_at, attempts, kind',
       tiles_meta: '[adventure_id+layer]',
+    })
+    this.version(2).stores({
+      outbox: '++id, created_at, attempts, kind',
     })
   }
 }

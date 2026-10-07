@@ -95,6 +95,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"positions": {
+                  Row: {
+                    "accuracy_m": number | null,"adventure_id": string,"geog": unknown,"heading": number | null,"lat": number | null,"lng": number | null,"speed": number | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accuracy_m"?: number | null,"adventure_id": string,"geog": unknown,"heading"?: number | null,"lat"?: never,"lng"?: never,"speed"?: number | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "accuracy_m"?: number | null,"adventure_id"?: string,"geog"?: unknown,"heading"?: number | null,"lat"?: never,"lng"?: never,"speed"?: number | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "positions_adventure_id_fkey"
+      columns: ["adventure_id"]
+isOneToOne: false
+      referencedRelation: "adventures"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "positions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "colour": string,"created_at": string | null,"display_name": string,"id": string
@@ -445,6 +471,11 @@ isOneToOne: false
 "get_adventure_points":
 { Args: { "token": string }; Returns: {
               "id": string,"kind": string,"lat": number,"lng": number,"name": string,"note": string,"seq": number
+            }[]
+                           },
+"get_adventure_positions":
+{ Args: { "token": string }; Returns: {
+              "heading": number,"lat": number,"lng": number,"speed": number,"updated_at": string,"user_id": string
             }[]
                            },
 "get_adventure_routes":
@@ -1043,6 +1074,24 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "points"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"upsert_position":
+{ Args: { "p": Json }; Returns: {
+              "accuracy_m": number | null,
+"adventure_id": string,
+"geog": unknown,
+"heading": number | null,
+"lat": number | null,
+"lng": number | null,
+"speed": number | null,
+"updated_at": string,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "positions"
         isOneToOne: true
         isSetofReturn: false
       } },

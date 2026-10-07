@@ -8,6 +8,7 @@ export default function PointDetailSheet({
   isEditor,
   onEdit,
   onDelete,
+  onNavigate,
   onClose,
 }: {
   point: Point
@@ -15,6 +16,7 @@ export default function PointDetailSheet({
   isEditor: boolean
   onEdit: (p: Point) => void
   onDelete: (p: Point) => void
+  onNavigate?: (p: Point) => void
   onClose: () => void
 }) {
   const dist =
@@ -34,6 +36,11 @@ export default function PointDetailSheet({
       </p>
       {point.note && <p>{point.note}</p>}
       <div className="stack">
+        {onNavigate && (
+          <button className="primary" onClick={() => onNavigate(point)}>
+            Navigate
+          </button>
+        )}
         {isEditor && (
           <>
             <button onClick={() => onEdit(point)}>Edit</button>

@@ -24,6 +24,9 @@ import { saveRouteLocal, removeRoute } from '@/features/routes/repo'
 import type { RouteRow } from '@/features/routes/api'
 import { useSync } from '@/features/sync/useSync'
 import SyncBadge from '@/features/sync/SyncBadge'
+import { usePositions } from '@/features/live/usePositions'
+import NavigateHud from '@/features/live/NavigateHud'
+import { useAuth as useAuthCtx } from '@/features/auth/useAuth'
 import { useRecorder, type PendingRoute } from '@/features/routes/useRecorder'
 import RecordSheet from '@/features/routes/RecordSheet'
 import FinishRouteSheet, {
@@ -41,6 +44,7 @@ export default function MapPage() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const { user } = useAuth()
+  const { profile } = useAuthCtx()
   const token = params.get('token')
   const guest = !user && !!token
   const { position, error } = useGeolocation()
@@ -72,6 +76,7 @@ export default function MapPage() {
     lat: number
     lng: number
     t: number
+    bounds?: [[number, number], [number, number]]
   } | null>(null)
   const [recording, setRecording] = useState(false)
   const [endRouteAt, setEndRouteAt] = useState(false)
@@ -82,11 +87,31 @@ export default function MapPage() {
   } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showTiles, setShowTiles] = useState(false)
+  const [headingUp, setHeadingUp] = useState(false)
+  const [navTarget, setNavTarget] = useState<Point | null>(null)
+  const [sharePos, setSharePos] = useState(
+    () => localStorage.getItem('sharePos') !== 'off',
+  )
 
   const isEditor = !guest && (role === 'owner' || role === 'editor')
   const isOwner = role === 'owner'
   const recorder = useRecorder(position, points, snapRadius)
   const sync = useSync()
+  const self =
+    user && profile
+      ? {
+          user_id: user.id,
+          name: profile.display_name || user.email?.split('@')[0] || 'me',
+          colour: profile.colour || '#1e88e5',
+        }
+      : null
+  const { others, online } = usePositions({
+    adventureId: id,
+    token: guest ? token : null,
+    publish: isEditor && sharePos,
+    self,
+    position,
+  })
 
   useEffect(() => {
     if (user && id) {
@@ -183,6 +208,34 @@ export default function MapPage() {
     refreshRoutes()
   }
 
+  const zoomToAdventure = () => {
+    const coords = [
+      ...points.map((p) => ({ lat: p.lat, lng: p.lng })),
+      ...routes.flatMap((r) =>
+        r.coords.map(([lng, lat]) => ({ lat, lng })),
+      ),
+    ]
+    if (position) coords.push({ lat: position.lat, lng: position.lng })
+    if (!coords.length) return
+    const lats = coords.map((c) => c.lat)
+    const lngs = coords.map((c) => c.lng)
+    setFlyTo({
+      lat: Math.min(...lats),
+      lng: Math.min(...lngs),
+      bounds: [
+        [Math.min(...lats), Math.min(...lngs)],
+        [Math.max(...lats), Math.max(...lngs)],
+      ],
+      t: Date.now(),
+    })
+  }
+
+  const toggleSharePos = () => {
+    const next = !sharePos
+    setSharePos(next)
+    localStorage.setItem('sharePos', next ? 'on' : 'off')
+  }
+
   const recordingCoords = recorder.pendingCoords.map(
     ([lng, lat]) => ({ lat, lng }) as const,
   )
@@ -204,6 +257,8 @@ export default function MapPage() {
         points={points}
         routes={routes}
         recordingCoords={recordingCoords}
+        others={[...others.values()]}
+        rotation={headingUp && position?.heading != null ? -position.heading : 0}
         position={position}
         error={error}
         onMarkerTap={setSelected}
@@ -245,9 +300,23 @@ export default function MapPage() {
           <ul className="list">
             {members.map((m) => (
               <li key={m.user_id} className="card">
-                <span className="dot" style={{ background: m.colour }} />
-                <strong>{m.display_name || 'Member'}</strong>
-                <span className="muted">{m.role}</span>
+                <button
+                  className="linklike"
+                  onClick={() => {
+                    const o = others.get(m.user_id)
+                    if (o) {
+                      setFlyTo({ lat: o.lat, lng: o.lng, t: Date.now() })
+                      setTab('map')
+                    }
+                  }}
+                >
+                  <span className="dot" style={{ background: m.colour }} />
+                  <strong>{m.display_name || 'Member'}</strong>
+                  <span className="muted">{m.role}</span>
+                  {online.has(m.user_id) && (
+                    <span className="dot-online">●</span>
+                  )}
+                </button>
               </li>
             ))}
           </ul>
@@ -279,6 +348,32 @@ export default function MapPage() {
           </button>
         </>
       )}
+      {tab === 'map' && (
+        <>
+          <button
+            className={`compass-btn${headingUp ? ' active' : ''}`}
+            title="Heading up"
+            onClick={() => setHeadingUp((h) => !h)}
+          >
+            🧭
+          </button>
+          <button
+            className="zoomadv-btn"
+            title="Zoom to adventure"
+            onClick={zoomToAdventure}
+          >
+            ⛶
+          </button>
+        </>
+      )}
+
+      {navTarget && (
+        <NavigateHud
+          point={navTarget}
+          position={position}
+          onClose={() => setNavTarget(null)}
+        />
+      )}
 
       {adding && (
         <AddPointSheet
@@ -305,6 +400,10 @@ export default function MapPage() {
             setAdding({ lat: p.lat, lng: p.lng, accuracy: null, initial: p })
           }}
           onDelete={onDelete}
+          onNavigate={(p) => {
+            setNavTarget(p)
+            setSelected(null)
+          }}
           onClose={() => setSelected(null)}
         />
       )}
@@ -373,6 +472,8 @@ export default function MapPage() {
             setSnapRadius(snap)
             setAdv({ ...adv, name, snap_radius_m: snap })
           }}
+          sharePos={sharePos}
+          onToggleShare={isEditor ? toggleSharePos : undefined}
           onOfflineMaps={() => {
             setShowSettings(false)
             setShowTiles(true)

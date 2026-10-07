@@ -6,12 +6,16 @@ export default function AdventureSettingsSheet({
   isOwner,
   onSaved,
   onOfflineMaps,
+  sharePos,
+  onToggleShare,
   onClose,
 }: {
   adventure: { id: string; name: string; snap_radius_m: number }
   isOwner: boolean
   onSaved: (snap: number, name: string) => void
   onOfflineMaps?: () => void
+  sharePos?: boolean
+  onToggleShare?: () => void
   onClose: () => void
 }) {
   const [name, setName] = useState(adventure.name)
@@ -52,6 +56,16 @@ export default function AdventureSettingsSheet({
           <button type="button" onClick={onOfflineMaps}>
             Offline maps
           </button>
+        )}
+        {typeof onToggleShare === 'function' && (
+          <label className="checkline">
+            <input
+              type="checkbox"
+              checked={sharePos}
+              onChange={() => onToggleShare()}
+            />
+            Share my position
+          </label>
         )}
         <button type="submit" className="primary">
           Done

@@ -14,6 +14,8 @@ import PointMarker from '@/features/points/PointMarker'
 import type { Point } from '@/features/points/api'
 import RoutePolyline from '@/features/routes/RoutePolyline'
 import type { RouteRow } from '@/features/routes/api'
+import MemberMarker from '@/features/live/MemberMarker'
+import type { LivePos } from '@/features/live/usePositions'
 import { Polyline } from 'react-leaflet'
 
 const DEFAULT_CENTER: [number, number] = [-33.56, 18.48]
@@ -61,10 +63,21 @@ function LongPress({ onLongPress }: { onLongPress?: (lat: number, lng: number) =
   return null
 }
 
-function FlyTo({ target }: { target: { lat: number; lng: number; t: number } | null }) {
+function FlyTo({
+  target,
+}: {
+  target: {
+    lat: number
+    lng: number
+    t: number
+    bounds?: [[number, number], [number, number]]
+  } | null
+}) {
   const map = useMap()
   useEffect(() => {
-    if (target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 15))
+    if (!target) return
+    if (target.bounds) map.flyToBounds(target.bounds, { padding: [40, 40] })
+    else map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 15))
   }, [target, map])
   return null
 }
@@ -73,6 +86,8 @@ export default function MapView({
   points = [],
   routes = [],
   recordingCoords = [],
+  others = [],
+  rotation = 0,
   onMarkerTap,
   onRouteTap,
   onLongPress,
@@ -83,17 +98,27 @@ export default function MapView({
   points?: Point[]
   routes?: RouteRow[]
   recordingCoords?: { lat: number; lng: number }[]
+  others?: LivePos[]
+  rotation?: number
   onMarkerTap?: (p: Point) => void
   onRouteTap?: (r: RouteRow) => void
   onLongPress?: (lat: number, lng: number) => void
-  flyTo?: { lat: number; lng: number; t: number } | null
+  flyTo?: {
+    lat: number
+    lng: number
+    t: number
+    bounds?: [[number, number], [number, number]]
+  } | null
   position?: GeoPosition | null
   error?: string | null
 }) {
   const [following, setFollowing] = useState(true)
 
   return (
-    <>
+    <div
+      className={rotation ? 'mrot' : undefined}
+      style={{ ['--rot' as string]: `${rotation}deg` }}
+    >
       <MapContainer
         center={position ? [position.lat, position.lng] : DEFAULT_CENTER}
         zoom={14}
@@ -116,6 +141,9 @@ export default function MapView({
         {routes.map((r) => (
           <RoutePolyline key={r.id} route={r} onTap={onRouteTap} />
         ))}
+        {others.map((o) => (
+          <MemberMarker key={o.user_id} pos={o} />
+        ))}
         {recordingCoords.length > 1 && (
           <Polyline
             positions={recordingCoords.map((c) => [c.lat, c.lng] as [number, number])}
@@ -126,6 +154,7 @@ export default function MapView({
         <LongPress onLongPress={onLongPress} />
         <FlyTo target={flyTo ?? null} />
       </MapContainer>
+
       <button
         className={`follow-btn${following ? ' active' : ''}`}
         onClick={() => setFollowing((f) => !f)}
@@ -133,6 +162,6 @@ export default function MapView({
         {following ? 'Following' : 'Follow me'}
       </button>
       {error && <div className="geo-error">{error}</div>}
-    </>
+    </div>
   )
 }

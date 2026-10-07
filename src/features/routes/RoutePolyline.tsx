@@ -27,7 +27,7 @@ export default function RoutePolyline({
         (a) =>
           L.divIcon({
             className: 'route-arrow',
-            html: `<span style="transform:rotate(${route.direction === 'reverse' ? a.bearing + 180 : a.bearing}deg)">▲</span>`,
+            html: `<span style="transform:rotate(calc(${route.direction === 'reverse' ? a.bearing + 180 : a.bearing}deg - var(--rot, 0deg)))">▲</span>`,
             iconSize: [14, 14],
           }),
       ),
