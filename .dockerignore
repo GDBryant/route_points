@@ -1,0 +1,14 @@
+node_modules
+dist
+dev-dist
+.git
+.github
+.env
+.env.*
+playwright-report
+test-results
+supabase
+ai_docs
+*.md
+Dockerfile
+docker-compose.yml
