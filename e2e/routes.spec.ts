@@ -88,6 +88,12 @@ test('auto mode drops waypoints on interval', async ({ page, request }) => {
   await page.locator('input[type=range]').fill('0')
   await page.getByRole('button', { name: 'Start route' }).click()
 
-  await page.clock.runFor(16_000)
-  await expect(page.getByText(/\d+ waypoints/)).toHaveText(/[3-9]\d* waypoints|[1-9]\d+ waypoints/)
+  for (let i = 0; i < 3; i++) {
+    await page
+      .context()
+      .setGeolocation({ latitude: -33.56 - i * 0.0003, longitude: 18.48 })
+    await page.waitForTimeout(300)
+    await page.clock.runFor(6_000)
+  }
+  await expect(page.getByText(/\d+ waypoints/)).toHaveText(/[2-9]\d* waypoints/)
 })

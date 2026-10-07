@@ -1,40 +1,65 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '@/lib/db'
 import {
-  listRoutes,
   listRoutesByToken,
   subscribeRoutes,
   type RouteRow,
 } from './api'
+import { syncRoutesFromServer } from './repo'
 
 export function useRoutes(opts: { adventureId?: string; token?: string }) {
-  const [routes, setRoutes] = useState<RouteRow[]>([])
+  const [tokenRoutes, setTokenRoutes] = useState<RouteRow[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
 
-  const refresh = useCallback(() => {
-    const load = opts.adventureId
-      ? listRoutes(opts.adventureId)
-      : listRoutesByToken(opts.token!)
-    load.then(setRoutes).catch((e) => setError(e.message))
+  const localRoutes = useLiveQuery(
+    () =>
+      opts.adventureId
+        ? db.routes
+            .where('adventure_id')
+            .equals(opts.adventureId)
+            .toArray()
+        : Promise.resolve([] as RouteRow[]),
+    [opts.adventureId, tick],
+    [] as RouteRow[],
+  )
+
+  useEffect(() => {
+    if (opts.adventureId || !opts.token) return
+    listRoutesByToken(opts.token)
+      .then(setTokenRoutes)
+      .catch((e) => setError(e.message))
   }, [opts.adventureId, opts.token])
 
   useEffect(() => {
+    if (!opts.adventureId) return
     let active = true
-    const load = opts.adventureId
-      ? listRoutes(opts.adventureId)
-      : listRoutesByToken(opts.token!)
-    load
-      .then((r) => active && setRoutes(r))
+    syncRoutesFromServer(opts.adventureId)
+      .then(() => active && setTick((t) => t + 1))
       .catch((e) => active && setError(e.message))
 
-    let unsub: (() => void) | undefined
-    if (opts.adventureId) {
-      unsub = subscribeRoutes(opts.adventureId, () => refresh())
-    }
+    const unsub = subscribeRoutes(opts.adventureId, () => {
+      syncRoutesFromServer(opts.adventureId!).catch(() => {})
+    })
     return () => {
       active = false
-      unsub?.()
+      unsub()
     }
-  }, [opts.adventureId, opts.token, refresh])
+  }, [opts.adventureId])
 
-  return { routes, error, refresh }
+  const refresh = () => {
+    if (opts.adventureId)
+      syncRoutesFromServer(opts.adventureId).catch((e) => setError(e.message))
+    else if (opts.token)
+      listRoutesByToken(opts.token)
+        .then(setTokenRoutes)
+        .catch((e) => setError(e.message))
+  }
+
+  return {
+    routes: opts.adventureId ? localRoutes : tokenRoutes,
+    error,
+    refresh,
+  }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
-import { addWaypoints, type WaypointInput } from './api'
+import { type WaypointInput } from './api'
+import { queueWaypoints } from './repo'
 import { nearestPoint } from './snap'
 import { haversineM } from '@/lib/geo'
 import type { Point } from '@/features/points/api'
@@ -14,7 +15,7 @@ export interface PendingRoute {
 }
 
 const MAX_ACCURACY_M = 50
-const MOVE_DROP_M = 25
+const MIN_MOVE_M = 5
 const FLUSH_COUNT = 10
 const FLUSH_MS = 30_000
 
@@ -33,6 +34,7 @@ export function useRecorder(
   const bufRef = useRef<WaypointInput[]>([])
   const seqRef = useRef(0)
   const lastPosRef = useRef<GeoPosition | null>(null)
+  const lastDropMsRef = useRef(0)
   const routeRef = useRef<PendingRoute | null>(null)
   const wakeLockRef = useRef<{ release: () => void } | null>(null)
   const pointsRef = useRef(points)
@@ -48,6 +50,7 @@ export function useRecorder(
     const p = posRef.current
     if (!p || (p.accuracy != null && p.accuracy > MAX_ACCURACY_M)) return false
     seqRef.current += 1
+    lastDropMsRef.current = Date.now()
     bufRef.current.push({
       client_id: crypto.randomUUID(),
       seq: seqRef.current,
@@ -66,7 +69,7 @@ export function useRecorder(
     if (!routeRef.current || bufRef.current.length === 0) return
     const batch = bufRef.current
     bufRef.current = []
-    await addWaypoints(routeRef.current.client_id, batch).catch(() => {
+    await queueWaypoints(routeRef.current.client_id, batch).catch(() => {
       bufRef.current = [...batch, ...bufRef.current]
     })
   }
@@ -85,6 +88,7 @@ export function useRecorder(
     bufRef.current = []
     seqRef.current = 0
     lastPosRef.current = null
+    lastDropMsRef.current = 0
     setRoute(r)
     setWaypointCount(0)
     setElapsedS(0)
@@ -124,12 +128,10 @@ export function useRecorder(
       if (r!.mode === 'auto') {
         const p = posRef.current
         const last = lastPosRef.current
-        const elapsedMs =
-          Date.now() - new Date(r!.started_at).getTime()
-        const due = elapsedMs >= seqRef.current * (r!.interval_s ?? 5) * 1000
-        const moved =
-          !last || haversineM(last, p!) >= MOVE_DROP_M
-        if (p && (due || moved)) dropWaypoint()
+        const due =
+          Date.now() - lastDropMsRef.current >= (r!.interval_s ?? 5) * 1000
+        const moved = !last || haversineM(last, p!) >= MIN_MOVE_M
+        if (p && due && moved) dropWaypoint()
       }
     }, 1000)
     const flushTimer = setInterval(flush, FLUSH_MS)

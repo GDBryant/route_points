@@ -21,3 +21,7 @@
 | 2026-10-07 | points replica identity full | Realtime DELETE events need old.id |
 | 2026-10-07 | waypoints NOT in realtime; batched via add_waypoints (10 wp / 30 s) | Volume too high for realtime; routes table events trigger coord refetch |
 | 2026-10-07 | upsert_route on record start, not just finish | add_waypoints needs existing route row (looked up by client_id) |
+| 2026-10-07 | Dexie + liveQuery for app reads; guest mode stays network-only | Viewers have no login so no benefit from local cache |
+| 2026-10-07 | Outbox: FIFO, server errors retry until 5 (dead), drain rewrites temp point ids → server ids in dependent payloads | FK violations when route references unsynced point |
+| 2026-10-07 | Tile caps OSM 2500 / Esri 8000, zoom 12–16 (UI 13–17) | OSM ToS bulk-download policy |
+| 2026-10-07 | Auto recording: drop iff interval elapsed AND moved ≥5 m | Movement alone ignored interval; stationary skips |

@@ -40,14 +40,20 @@ describe('usePoints', () => {
     expect(result.current.points[0].id).toBe('a')
 
     act(() => cb({ eventType: 'INSERT', new: mk('b'), old: { id: '' } }))
-    expect(result.current.points.map((p) => p.id)).toEqual(['a', 'b'])
+    await waitFor(() =>
+      expect(result.current.points.map((p) => p.id)).toEqual(['a', 'b']),
+    )
 
     act(() =>
       cb({ eventType: 'UPDATE', new: mk('a', 'renamed'), old: { id: 'a' } }),
     )
-    expect(result.current.points[0].name).toBe('renamed')
+    await waitFor(() =>
+      expect(result.current.points[0].name).toBe('renamed'),
+    )
 
     act(() => cb({ eventType: 'DELETE', new: mk('x'), old: { id: 'a' } }))
-    expect(result.current.points.map((p) => p.id)).toEqual(['b'])
+    await waitFor(() =>
+      expect(result.current.points.map((p) => p.id)).toEqual(['b']),
+    )
   })
 })

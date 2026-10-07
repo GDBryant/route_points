@@ -52,6 +52,9 @@ docker compose up --build     # http://localhost:8080
 ```
 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are passed as build args. Backend runs on the host via `npx supabase start` (the Supabase CLI manages its own containers).
 
+## Offline
+Points and routes are written to a local IndexedDB (Dexie) outbox and synced to Supabase in FIFO order on reconnect (drain also runs every 30 s, on tab focus, and after each enqueue while online). Failed items retry 5 times then appear under the sync badge for retry/discard. Map tiles for an adventure's bounds can be prefetched (Settings → Offline maps): OpenStreetMap capped at 2500 tiles per adventure (OSM tile-usage policy — bulk downloads must be modest), Esri imagery at 8000, zooms 12–16.
+
 ## Deploy
 - Frontend: Vercel or Netlify (build `npm run build`, output `dist/`)
 - Backend: Supabase cloud project; set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` in host env; `npx supabase link && npx supabase db push`

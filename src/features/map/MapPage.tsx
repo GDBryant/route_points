@@ -12,22 +12,18 @@ import {
 import AdventureSettingsSheet from '@/features/adventures/AdventureSettingsSheet'
 import { useAuth } from '@/features/auth/useAuth'
 import { usePoints } from '@/features/points/usePoints'
-import {
-  deletePoint,
-  upsertPoint,
-  type Point,
-} from '@/features/points/api'
+import { savePointLocal, removePoint } from '@/features/points/repo'
+import type { Point } from '@/features/points/api'
 import AddPointSheet, {
   type PointFormInput,
 } from '@/features/points/AddPointSheet'
 import PointDetailSheet from '@/features/points/PointDetailSheet'
 import PointsList from '@/features/points/PointsList'
 import { useRoutes } from '@/features/routes/useRoutes'
-import {
-  deleteRoute,
-  upsertRoute,
-  type RouteRow,
-} from '@/features/routes/api'
+import { saveRouteLocal, removeRoute } from '@/features/routes/repo'
+import type { RouteRow } from '@/features/routes/api'
+import { useSync } from '@/features/sync/useSync'
+import SyncBadge from '@/features/sync/SyncBadge'
 import { useRecorder, type PendingRoute } from '@/features/routes/useRecorder'
 import RecordSheet from '@/features/routes/RecordSheet'
 import FinishRouteSheet, {
@@ -36,6 +32,8 @@ import FinishRouteSheet, {
 import RouteDetailSheet from '@/features/routes/RouteDetailSheet'
 import RoutesList from '@/features/routes/RoutesList'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
+import DownloadTilesSheet from '@/features/tiles/DownloadTilesSheet'
+import { adventureBbox } from '@/features/tiles/tileMath'
 
 type Tab = 'map' | 'points' | 'routes' | 'members'
 
@@ -83,10 +81,12 @@ export default function MapPage() {
     forceToId?: string
   } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showTiles, setShowTiles] = useState(false)
 
   const isEditor = !guest && (role === 'owner' || role === 'editor')
   const isOwner = role === 'owner'
   const recorder = useRecorder(position, points, snapRadius)
+  const sync = useSync()
 
   useEffect(() => {
     if (user && id) {
@@ -108,16 +108,10 @@ export default function MapPage() {
 
   const savePoint = async (input: PointFormInput) => {
     if (!adding) return
-    const saved = await upsertPoint({
-      adventure_id: id,
-      client_id: input.client_id ?? crypto.randomUUID(),
+    const saved = await savePointLocal(id, {
+      ...input,
       lat: adding.lat,
       lng: adding.lng,
-      name: input.name,
-      kind: input.kind,
-      seq: input.seq,
-      accuracy_m: input.accuracy_m,
-      note: input.note,
     })
     const wasEnd = endRouteAt
     setAdding(null)
@@ -135,9 +129,8 @@ export default function MapPage() {
   }
 
   const onDelete = async (p: Point) => {
-    await deletePoint(p.id)
+    await removePoint(p)
     setSelected(null)
-    refresh()
   }
 
   const onStopRecord = async () => {
@@ -148,7 +141,7 @@ export default function MapPage() {
 
   const saveRoute = async (input: FinishInput) => {
     if (!finishing) return
-    await upsertRoute({
+    await saveRouteLocal({
       adventure_id: id,
       client_id: finishing.route.client_id,
       name: input.name,
@@ -159,6 +152,7 @@ export default function MapPage() {
       interval_s: finishing.route.interval_s,
       started_at: finishing.route.started_at,
       ended_at: new Date().toISOString(),
+      coords: recorder.pendingCoords,
     })
     setFinishing(null)
     setRecording(false)
@@ -167,7 +161,7 @@ export default function MapPage() {
   }
 
   const onRouteDirection = async (r: RouteRow, dir: string) => {
-    await upsertRoute({
+    await saveRouteLocal({
       adventure_id: id,
       client_id: r.client_id,
       name: r.name,
@@ -184,7 +178,7 @@ export default function MapPage() {
   }
 
   const onRouteDelete = async (r: RouteRow) => {
-    await deleteRoute(r.id)
+    await removeRoute(r)
     setSelectedRoute(null)
     refreshRoutes()
   }
@@ -196,6 +190,16 @@ export default function MapPage() {
   return (
     <div className="mappage">
       {guest && <div className="banner">Viewing as guest</div>}
+      {!sync.online && <div className="banner offline">Offline — changes will sync</div>}
+      {!guest && (
+        <SyncBadge
+          online={sync.online}
+          pending={sync.pending}
+          dead={sync.dead}
+          syncing={sync.syncing}
+          onSync={sync.syncNow}
+        />
+      )}
       <MapView
         points={points}
         routes={routes}
@@ -335,7 +339,7 @@ export default function MapPage() {
           onStart={async (mode, s) => {
             const r = recorder.start(mode, s)
             if (r)
-              await upsertRoute({
+              await saveRouteLocal({
                 adventure_id: id,
                 client_id: r.client_id,
                 mode: r.mode,
@@ -369,7 +373,24 @@ export default function MapPage() {
             setSnapRadius(snap)
             setAdv({ ...adv, name, snap_radius_m: snap })
           }}
+          onOfflineMaps={() => {
+            setShowSettings(false)
+            setShowTiles(true)
+          }}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showTiles && (
+        <DownloadTilesSheet
+          adventureId={id}
+          bbox={adventureBbox([
+            ...points,
+            ...routes.flatMap((r) =>
+              r.coords.map(([lng, lat]) => ({ lat, lng })),
+            ),
+          ])}
+          onClose={() => setShowTiles(false)}
         />
       )}
 

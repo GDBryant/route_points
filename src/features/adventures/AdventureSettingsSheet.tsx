@@ -5,11 +5,13 @@ export default function AdventureSettingsSheet({
   adventure,
   isOwner,
   onSaved,
+  onOfflineMaps,
   onClose,
 }: {
   adventure: { id: string; name: string; snap_radius_m: number }
   isOwner: boolean
   onSaved: (snap: number, name: string) => void
+  onOfflineMaps?: () => void
   onClose: () => void
 }) {
   const [name, setName] = useState(adventure.name)
@@ -46,6 +48,11 @@ export default function AdventureSettingsSheet({
             disabled={!isOwner}
           />
         </label>
+        {onOfflineMaps && (
+          <button type="button" onClick={onOfflineMaps}>
+            Offline maps
+          </button>
+        )}
         <button type="submit" className="primary">
           Done
         </button>

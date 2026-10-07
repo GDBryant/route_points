@@ -367,6 +367,35 @@ button.big {
   min-height: 0;
 }
 
+.sync-badge {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: 10px;
+  z-index: 1600;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 16px;
+  padding: 0 10px;
+}
+
+.sync-badge.offline {
+  background: #fff3cd;
+  border-color: #e6b800;
+}
+
+.sync-badge .count {
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.banner.offline {
+  background: #fff3cd;
+  color: #7a5800;
+}
+
 select {
   min-height: 44px;
   font-size: 16px;

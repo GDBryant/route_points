@@ -17,6 +17,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",
     "dexie": "^4.4.6",
+    "dexie-react-hooks": "^4.4.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint-config-prettier": "^10.1.8",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.0",
     "oxlint": "^1.81.0",
     "prettier": "^3.8.0",

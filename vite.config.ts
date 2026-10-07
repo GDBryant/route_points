@@ -27,7 +27,15 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'osm-tiles',
-              expiration: { maxEntries: 2000, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              expiration: { maxEntries: 4000, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/server\.arcgisonline\.com\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'esri-tiles',
+              expiration: { maxEntries: 4000, maxAgeSeconds: 30 * 24 * 60 * 60 },
             },
           },
         ],

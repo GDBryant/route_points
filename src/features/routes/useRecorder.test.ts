@@ -5,14 +5,14 @@ import type { GeoPosition } from '@/features/tracking/useGeolocation'
 import type { Point } from '@/features/points/api'
 
 const addWaypoints = vi.fn().mockResolvedValue(1)
-vi.mock('./api', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('./api')>()
-  return { ...mod, addWaypoints: (...args: unknown[]) => addWaypoints(...args) }
+vi.mock('./repo', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./repo')>()
+  return { ...mod, queueWaypoints: (...args: unknown[]) => addWaypoints(...args) }
 })
 
-const pos = (accuracy = 5): GeoPosition => ({
-  lat: -33.5,
-  lng: 18.4,
+const pos = (accuracy = 5, lat = -33.5, lng = 18.4): GeoPosition => ({
+  lat,
+  lng,
   accuracy,
   heading: 0,
   speed: 0,
@@ -35,13 +35,32 @@ describe('useRecorder', () => {
   })
   afterEach(() => vi.useRealTimers())
 
-  it('auto mode drops waypoints on interval', async () => {
-    const { result } = renderHook(() => useRecorder(pos(), [], 20))
+  it('auto mode drops on interval when moving, skips when stationary', async () => {
+    let lat = -33.5
+    const { result, rerender } = renderHook(
+      ({ p }) => useRecorder(p, [], 20),
+      { initialProps: { p: pos() } },
+    )
     act(() => result.current.start('auto', 5))
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(16_000)
+      await vi.advanceTimersByTimeAsync(6_000)
     })
-    expect(result.current.waypointCount).toBeGreaterThanOrEqual(3)
+    const afterFirst = result.current.waypointCount
+    expect(afterFirst).toBeGreaterThanOrEqual(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(11_000)
+    })
+    expect(result.current.waypointCount).toBe(afterFirst)
+
+    for (let i = 0; i < 3; i++) {
+      lat -= 0.0002
+      rerender({ p: pos(5, lat, 18.4) })
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_500)
+      })
+    }
+    expect(result.current.waypointCount).toBeGreaterThanOrEqual(afterFirst + 2)
     expect(result.current.route?.interval_s).toBe(5)
   })
 
