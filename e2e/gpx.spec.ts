@@ -31,9 +31,28 @@ test('export and import GPX', async ({ page, request }) => {
   await page.context().setGeolocation({ latitude: -33.561, longitude: 18.48 })
   await page.waitForTimeout(500)
   await page.getByRole('button', { name: 'Drop waypoint' }).click()
+  await expect(page.getByText(/[2-9]\d* waypoints/)).toBeVisible()
   await page.getByRole('button', { name: 'Stop' }).click()
   await page.getByRole('button', { name: 'Save route' }).click()
-  await page.waitForTimeout(400)
+  await expect(
+    page.locator('path.leaflet-interactive').first(),
+  ).toBeAttached()
+  await page.getByRole('button', { name: 'Routes' }).click()
+  await expect(page.locator('.list .card').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Map' }).click()
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          const { db } = await import('/src/lib/db.ts')
+          return (await db.routes.toArray()).reduce(
+            (n, r) => n + r.coords.length,
+            0,
+          )
+        }),
+      { timeout: 15_000 },
+    )
+    .toBe(2)
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '⚙' }).click()

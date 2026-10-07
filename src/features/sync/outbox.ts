@@ -122,6 +122,22 @@ async function drainLoop(): Promise<DrainResult> {
 }
 
 async function reconcile(item: OutboxItem, result: unknown) {
+  if (item.kind === 'add_waypoints') {
+    const p = item.payload as {
+      route_client_id: string
+      wps: { seq: number; lat: number; lng: number }[]
+    }
+    const route = await db.routes
+      .where('client_id')
+      .equals(p.route_client_id)
+      .first()
+    if (route) {
+      const coords = (route.coords ?? []) as [number, number][]
+      for (const w of p.wps) coords[w.seq - 1] = [w.lng, w.lat]
+      await db.routes.update(route.id, { coords })
+    }
+    return
+  }
   const row = result as Record<string, unknown> | null
   if (!row?.id) return
   if (item.kind === 'upsert_point') {

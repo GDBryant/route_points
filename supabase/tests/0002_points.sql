@@ -13,8 +13,8 @@ grant select on pg_temp.u to authenticated, anon;
 grant select on pg_temp.ctx to authenticated, anon;
 
 insert into adventures (owner_id, name)
-values ((select id from u where rn = 1), 'Pt Trip');
-insert into ctx select id, share_token from adventures where name = 'Pt Trip';
+values ((select id from u where rn = 1), 'pgtap_pt_trip');
+insert into ctx select id, share_token from adventures where name = 'pgtap_pt_trip';
 
 set role authenticated;
 select set_config('request.jwt.claims',

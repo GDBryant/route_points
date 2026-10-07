@@ -3,8 +3,8 @@
 Mobile-first PWA for logging named location points and GPS routes between them during off-road "adventures" (e.g. dune obstacle courses). Multi-user live positions.
 
 ## Rules
-- Be very brief. Result, reason, next step. No preamble.
-- No code comments unless asked.
+- HARD RULE: Be very brief in all aspects — replies, commit messages, docs, code. Result, reason, next step. No preamble, filler or recaps.
+- HARD RULE: No code comments unless asked. Compact code, no over-engineering.
 - Read `ai_docs/` before working. Update `ai_docs/decisions.md` when a design choice is made; `ai_docs/progress.md` when a milestone lands.
 
 ## Stack
@@ -12,7 +12,7 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - Leaflet + OpenStreetMap (`react-leaflet`)
 - Supabase: Auth, Postgres + PostGIS, Realtime
 - Offline: IndexedDB (Dexie) queue, sync on reconnect; cached tiles
-- Hosting: Vercel/Netlify + Supabase cloud
+- Hosting: Cloudflare Pages (Netlify fallback) + Supabase cloud
 
 ## Commands
 - `npm run dev` / `npm run build` / `npm run preview`

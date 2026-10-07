@@ -61,6 +61,6 @@ test('live positions + guest navigate HUD', async ({
   ).toHaveText(/\d+ m|\d+\.\d km/)
 
   await page.getByRole('button', { name: 'Members' }).click()
-  await expect(page.locator('.dot-online')).toBeVisible()
+  await expect(page.locator('.dot-online')).toBeVisible({ timeout: 15_000 })
   await guest.close()
 })

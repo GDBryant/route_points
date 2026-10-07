@@ -13,13 +13,13 @@ grant select on pg_temp.u to authenticated, anon;
 grant select on pg_temp.ctx to authenticated, anon;
 
 insert into adventures (owner_id, name)
-values ((select id from u where rn = 1), 'Rt Trip');
-insert into ctx select id, share_token from adventures where name = 'Rt Trip';
+values ((select id from u where rn = 1), 'pgtap_rt_trip');
+insert into ctx select id, share_token from adventures where name = 'pgtap_rt_trip';
 
 insert into adventures (owner_id, name)
-values ((select id from u where rn = 1), 'Rt Trip 2');
+values ((select id from u where rn = 1), 'pgtap_rt_trip2');
 create temp table ctx2 as
-select id aid, share_token tok from adventures where name = 'Rt Trip 2';
+select id aid, share_token tok from adventures where name = 'pgtap_rt_trip2';
 grant select on pg_temp.ctx2 to authenticated;
 
 set role authenticated;

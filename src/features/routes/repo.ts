@@ -27,7 +27,17 @@ export async function syncRoutesFromServer(adventureId: string) {
       )
         await db.routes.delete(r.id)
     }
-    await db.routes.bulkPut(remote)
+    const localByClient = new Map(local.map((r) => [r.client_id, r]))
+    await db.routes.bulkPut(
+      remote.map((r) =>
+        r.coords.length
+          ? r
+          : {
+              ...r,
+              coords: localByClient.get(r.client_id)?.coords ?? r.coords,
+            },
+      ),
+    )
   })
 }
 
