@@ -21,7 +21,7 @@ Built for events where drivers must reach a series of obstacles with no roads: t
 - Tests: Vitest, pgTAP, Playwright
 
 ## Setup
-Prereqs: Node 20+, npm, Docker (for local Supabase), [Supabase CLI](https://supabase.com/docs/guides/cli).
+Prereqs: Node 22+, npm, Docker (for local Supabase), [Supabase CLI](https://supabase.com/docs/guides/cli).
 
 ```sh
 git clone <repo-url> route_points && cd route_points
@@ -99,7 +99,7 @@ Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `m
    - Framework preset: None (or Vite)
    - Build command: `npm ci --legacy-peer-deps && npm run build`
    - Build output directory: `dist`
-   - Environment variables (set for **Production and Preview**): `NODE_VERSION=20`, `VITE_SUPABASE_URL=https://<ref>.supabase.co`, `VITE_SUPABASE_ANON_KEY=<anon key>`
+   - Environment variables (set for **Production and Preview**): `NODE_VERSION=22`, `VITE_SUPABASE_URL=https://<ref>.supabase.co`, `VITE_SUPABASE_ANON_KEY=<anon key>`
 4. **Save and Deploy**. First build ~2 min → `https://route-points.pages.dev`. `public/_redirects` (SPA fallback) and `public/_headers` (no-cache `sw.js`/`index.html`, immutable `assets/`) are picked up automatically.
 5. Optional custom domain: project → **Custom domains** → add; Cloudflare handles DNS/TLS if the domain is on Cloudflare, otherwise add the CNAME it shows. Then add the domain to Supabase Site URL / Redirect URLs.
 6. Smoke test on a phone: open the URL, request a magic link, click it (must land back on the app logged in), create an adventure, add a point, confirm it appears in Supabase Table Editor. Install the PWA (Add to Home Screen).
