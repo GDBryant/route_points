@@ -2,6 +2,7 @@ node_modules/
 dist/
 dev-dist/
 .env
+.idea/
 .env.*.local
 .supabase/
 playwright-report/

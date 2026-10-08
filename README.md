@@ -29,10 +29,10 @@ npm install
 cp .env.example .env            # fill VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 npx supabase start              # local Postgres + Auth + Realtime
 npx supabase db push            # apply supabase/migrations
-npm run dev                     # http://localhost:5173
+npm run dev                     # https://HOST:5173
 ```
 
-Test on a phone: run `npm run dev -- --host` and open the LAN URL over HTTPS (GPS requires a secure context; use `vite-plugin-mkcert` or a tunnel such as `npx localtunnel`).
+Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https://HOST:5173 with a self-signed cert and Supabase API is https://HOST:54321 — on the phone open both URLs once and accept the cert warning. Magic-link emails at http://HOST:54324 (Mailpit).
 
 ## Commands
 | Command | Purpose |
@@ -48,9 +48,10 @@ Test on a phone: run `npm run dev -- --host` and open the LAN URL over HTTPS (GP
 
 ## Run with Docker
 ```sh
-docker compose up --build     # http://localhost:8080
+./up      # Supabase + web (status monitor, Ctrl-C stops all) → http://192.168.7.58:8080
+./down
 ```
-VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are passed as build args. Backend runs on the host via `npx supabase start` (the Supabase CLI manages its own containers).
+VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY come from `.env` as build args.
 
 ## Offline
 Points and routes are written to a local IndexedDB (Dexie) outbox and synced to Supabase in FIFO order on reconnect (drain also runs every 30 s, on tab focus, and after each enqueue while online). Failed items retry 5 times then appear under the sync badge for retry/discard. Map tiles for an adventure's bounds can be prefetched (Settings → Offline maps): OpenStreetMap capped at 2500 tiles per adventure (OSM tile-usage policy — bulk downloads must be modest), Esri imagery at 8000, zooms 12–16.

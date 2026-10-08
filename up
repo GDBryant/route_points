@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+trap 'echo; ./down; exit 0' INT TERM
+
+npx supabase start
+docker compose up --build -d
+npx supabase status
+
+while true; do
+  sleep 5
+  clear
+  echo "Ctrl-C stops everything"
+  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' \
+    --filter label=com.supabase.cli.project=route_points
+  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' \
+    --filter label=com.docker.compose.project=route_points
+done
