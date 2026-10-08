@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Circle,
   CircleMarker,
@@ -56,15 +56,48 @@ function FollowMe({
   return null
 }
 
-function LongPress({ onLongPress }: { onLongPress?: (lat: number, lng: number) => void }) {
+function MapEvents({
+  onLongPress,
+  onUserMove,
+}: {
+  onLongPress?: (lat: number, lng: number) => void
+  onUserMove: () => void
+}) {
   useMapEvents({
     contextmenu: (e) => onLongPress?.(e.latlng.lat, e.latlng.lng),
+    dragstart: onUserMove,
   })
+  return null
+}
+
+function CenterTracker({
+  active,
+  onCenter,
+}: {
+  active: boolean
+  onCenter: (c: [number, number]) => void
+}) {
+  const map = useMap()
+  useMapEvents({
+    move: () => {
+      if (active) {
+        const c = map.getCenter()
+        onCenter([c.lat, c.lng])
+      }
+    },
+  })
+  useEffect(() => {
+    if (active) {
+      const c = map.getCenter()
+      onCenter([c.lat, c.lng])
+    }
+  }, [active, map, onCenter])
   return null
 }
 
 function FlyTo({
   target,
+  onFly,
 }: {
   target: {
     lat: number
@@ -72,13 +105,15 @@ function FlyTo({
     t: number
     bounds?: [[number, number], [number, number]]
   } | null
+  onFly: () => void
 }) {
   const map = useMap()
   useEffect(() => {
     if (!target) return
+    onFly()
     if (target.bounds) map.flyToBounds(target.bounds, { padding: [40, 40] })
     else map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 15))
-  }, [target, map])
+  }, [target, map, onFly])
   return null
 }
 
@@ -91,6 +126,8 @@ export default function MapView({
   onMarkerTap,
   onRouteTap,
   onLongPress,
+  movingId,
+  onCenterChange,
   flyTo,
   position = null,
   error = null,
@@ -103,6 +140,8 @@ export default function MapView({
   onMarkerTap?: (p: Point) => void
   onRouteTap?: (r: RouteRow) => void
   onLongPress?: (lat: number, lng: number) => void
+  movingId?: string | null
+  onCenterChange?: (lat: number, lng: number) => void
   flyTo?: {
     lat: number
     lng: number
@@ -113,6 +152,12 @@ export default function MapView({
   error?: string | null
 }) {
   const [following, setFollowing] = useState(true)
+  const [center, setCenter] = useState<[number, number] | null>(null)
+  const stopFollowing = useCallback(() => setFollowing(false), [])
+
+  useEffect(() => {
+    if (movingId && center) onCenterChange?.(center[0], center[1])
+  }, [movingId, center, onCenterChange])
 
   return (
     <div
@@ -136,7 +181,13 @@ export default function MapView({
         </LayersControl>
         <CurrentPositionMarker position={position} />
         {points.map((p) => (
-          <PointMarker key={p.id} point={p} onTap={(pt) => onMarkerTap?.(pt)} />
+          <PointMarker
+            key={p.id}
+            point={p}
+            onTap={(pt) => onMarkerTap?.(pt)}
+            moving={p.id === movingId}
+            position={p.id === movingId && center ? center : undefined}
+          />
         ))}
         {routes.map((r) => (
           <RoutePolyline key={r.id} route={r} onTap={onRouteTap} />
@@ -151,16 +202,16 @@ export default function MapView({
           />
         )}
         <FollowMe position={position} following={following} />
-        <LongPress onLongPress={onLongPress} />
-        <FlyTo target={flyTo ?? null} />
+        <MapEvents onLongPress={onLongPress} onUserMove={stopFollowing} />
+        <CenterTracker active={!!movingId} onCenter={setCenter} />
+        <FlyTo target={flyTo ?? null} onFly={stopFollowing} />
       </MapContainer>
 
-      <button
-        className={`follow-btn${following ? ' active' : ''}`}
-        onClick={() => setFollowing((f) => !f)}
-      >
-        {following ? 'Following' : 'Follow me'}
-      </button>
+      {!following && (
+        <button className="follow-btn" onClick={() => setFollowing(true)}>
+          Re-center
+        </button>
+      )}
       {error && <div className="geo-error">{error}</div>}
     </div>
   )

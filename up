@@ -7,12 +7,9 @@ npx supabase start
 docker compose up --build -d
 npx supabase status
 
-while true; do
-  sleep 5
-  clear
-  echo "Ctrl-C stops everything"
-  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' \
-    --filter label=com.supabase.cli.project=route_points
-  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' \
-    --filter label=com.docker.compose.project=route_points
+echo "Ctrl-C stops everything"
+for c in $(docker ps --format '{{.Names}}' --filter label=com.docker.compose.project=route_points); do
+  n=${c#supabase_}; n=${n%_route_points}
+  docker logs -f --tail 0 "$c" 2>&1 | sed "s/^/[$n] /" &
 done
+wait

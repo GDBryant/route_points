@@ -6,16 +6,25 @@ import type { Point } from './api'
 export default function PointMarker({
   point,
   onTap,
+  moving,
+  position,
 }: {
   point: Point
   onTap: (p: Point) => void
+  moving?: boolean
+  position?: [number, number]
 }) {
-  const icon = useMemo(() => pointIcon(point), [point])
+  const icon = useMemo(() => pointIcon(point, moving), [point, moving])
   return (
     <Marker
-      position={[point.lat, point.lng]}
+      position={position ?? [point.lat, point.lng]}
       icon={icon}
-      eventHandlers={{ click: () => onTap(point) }}
+      zIndexOffset={moving ? 1000 : 0}
+      eventHandlers={{
+        click: () => {
+          if (!moving) onTap(point)
+        },
+      }}
     />
   )
 }

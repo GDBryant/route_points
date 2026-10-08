@@ -32,3 +32,5 @@
 | 2026-10-07 | Weekly keepalive workflow pings Supabase REST | Free-tier projects pause after ~7 d idle |
 | 2026-10-08 | Dev over LAN: Vite basic-ssl + Supabase api.tls, HOST in .env | phone GPS needs secure context; https page can't call http API |
 | 2026-10-08 | ./up and ./down wrap `supabase start/stop` + `docker compose` | CLI owns Supabase containers; compose can't stop them |
+| 2026-10-08 | Move point: "Move" in point sheet → map pans under pinned marker, Save/Cancel banner | contextmenu long-press unreliable on desktop + iOS; pan-under-pin works everywhere |
+| 2026-10-08 | Follow stops on map drag/flyTo; "Re-center" button shown only while not following | Map must stay where user put it; explicit toggle was redundant |

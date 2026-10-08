@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import MapView from './MapView'
 import { useGeolocation } from '@/features/tracking/useGeolocation'
@@ -73,6 +73,8 @@ export default function MapPage() {
     initial?: Point
   } | null>(null)
   const [selected, setSelected] = useState<Point | null>(null)
+  const [moving, setMoving] = useState<Point | null>(null)
+  const [moveTo, setMoveTo] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null)
   const [flyTo, setFlyTo] = useState<{
     lat: number
@@ -154,6 +156,34 @@ export default function MapPage() {
 
   const onLongPress = (lat: number, lng: number) => {
     if (isEditor) setAdding({ lat, lng, accuracy: null })
+  }
+
+  const startMove = (p: Point) => {
+    setSelected(null)
+    setMoving(p)
+    setMoveTo({ lat: p.lat, lng: p.lng })
+    setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() })
+  }
+
+  const onMoveCenter = useCallback(
+    (lat: number, lng: number) => setMoveTo({ lat, lng }),
+    [],
+  )
+
+  const onMoved = async (p: Point, lat: number, lng: number) => {
+    await savePointLocal(id, {
+      name: p.name,
+      kind: p.kind,
+      note: p.note ?? '',
+      seq: p.seq,
+      accuracy_m: null,
+      lat,
+      lng,
+      client_id: p.client_id,
+    })
+    setMoving(null)
+    setMoveTo(null)
+    refresh()
   }
 
   const onDelete = async (p: Point) => {
@@ -267,6 +297,26 @@ export default function MapPage() {
     <div className="mappage">
       {guest && <div className="banner">Viewing as guest</div>}
       {!sync.online && <div className="banner offline">Offline — changes will sync</div>}
+      {moving && (
+        <div className="banner">
+          Pan map to position “{moving.name}”
+          <button
+            className="linklike"
+            onClick={() => moveTo && onMoved(moving, moveTo.lat, moveTo.lng)}
+          >
+            Save
+          </button>
+          <button
+            className="linklike"
+            onClick={() => {
+              setMoving(null)
+              setMoveTo(null)
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       {!guest && (
         <SyncBadge
           online={sync.online}
@@ -287,6 +337,8 @@ export default function MapPage() {
         onMarkerTap={setSelected}
         onRouteTap={setSelectedRoute}
         onLongPress={isEditor ? onLongPress : undefined}
+        movingId={moving?.id ?? null}
+        onCenterChange={onMoveCenter}
         flyTo={flyTo}
       />
 
@@ -455,6 +507,7 @@ export default function MapPage() {
             setSelected(null)
             setAdding({ lat: p.lat, lng: p.lng, accuracy: null, initial: p })
           }}
+          onMove={isEditor ? startMove : undefined}
           onDelete={onDelete}
           onNavigate={(p) => {
             setNavTarget(p)

@@ -23,10 +23,6 @@ body,
   font-size: 14px;
 }
 
-.follow-btn.active {
-  background: #2e7d32;
-}
-
 .page {
   max-width: 480px;
   margin: 0 auto;
@@ -222,6 +218,22 @@ input {
 .point-marker {
   background: none;
   border: none;
+}
+
+.point-marker.moving .pm-flag {
+  filter: drop-shadow(0 0 4px #1e88e5);
+  transform: scale(1.3);
+  transform-origin: bottom left;
+}
+
+.point-marker.moving .pm-label {
+  border-color: #1e88e5;
+}
+
+.banner button.linklike {
+  color: inherit;
+  text-decoration: underline;
+  margin-left: 8px;
 }
 
 .segmented {

@@ -7,6 +7,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: http://localhost:54321
+      VITE_SUPABASE_ANON_KEY: ci-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +31,8 @@ jobs:
           node-version: 20
           cache: npm
       - uses: supabase/setup-cli@v1
+        with:
+          version: latest
       - run: supabase start
       - name: Export Supabase env
         run: |

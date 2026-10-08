@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import PointDetailSheet from './PointDetailSheet'
 import type { Point } from './api'
@@ -43,5 +43,27 @@ describe('PointDetailSheet', () => {
     renderSheet(true)
     expect(screen.getByText('Edit')).toBeInTheDocument()
     expect(screen.getByText('Delete')).toBeInTheDocument()
+  })
+
+  it('Move calls onMove with point', () => {
+    const onMove = vi.fn()
+    render(
+      <PointDetailSheet
+        point={p}
+        position={pos}
+        isEditor={true}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={onMove}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Move'))
+    expect(onMove).toHaveBeenCalledWith(p)
+  })
+
+  it('hides Move without onMove', () => {
+    renderSheet(true)
+    expect(screen.queryByText('Move')).not.toBeInTheDocument()
   })
 })

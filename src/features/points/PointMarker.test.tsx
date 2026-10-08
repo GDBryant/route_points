@@ -18,4 +18,9 @@ describe('pointIcon', () => {
     expect(icon.options.html).toContain('Obstacle 1')
     expect(icon.options.html).toContain('#7b1fa2')
   })
+
+  it('moving adds class', () => {
+    expect(pointIcon(p, true).options.className).toBe('point-marker moving')
+    expect(pointIcon(p).options.className).toBe('point-marker')
+  })
 })

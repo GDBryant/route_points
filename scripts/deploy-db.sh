@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+SUPABASE_PROJECT_REF=neegnbmdioqfgatneits
 npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
 npx supabase db push
 if [[ "${1:-}" == "--types" ]]; then
