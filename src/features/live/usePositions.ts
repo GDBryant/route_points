@@ -56,11 +56,13 @@ export function usePositions({
     pubRef.current = publish
   }, [publish])
 
+  const selfId = self?.user_id ?? null
+
   useEffect(() => {
     if (!adventureId) return
     let active = true
     const chan = supabase.channel(`pos:${adventureId}`, {
-      config: { private: false, presence: { key: selfRef.current?.user_id ?? 'anon' } },
+      config: { private: false, presence: { key: selfId ?? 'anon' } },
     })
 
     chan
@@ -85,8 +87,8 @@ export function usePositions({
         )
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED' && selfRef.current) {
-          chan.track({ user_id: selfRef.current.user_id })
+        if (status === 'SUBSCRIBED' && selfId) {
+          chan.track({ user_id: selfId })
         }
       })
 
@@ -171,7 +173,7 @@ export function usePositions({
       clearInterval(prune)
       supabase.removeChannel(chan)
     }
-  }, [adventureId, token])
+  }, [adventureId, token, selfId])
 
   return { others, online }
 }

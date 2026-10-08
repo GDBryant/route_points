@@ -117,4 +117,26 @@ describe('usePositions', () => {
     )
     expect(result.current.others.get('u2')?.name).toBe('Bob')
   })
+
+  it('tracks presence when self arrives after subscribe', async () => {
+    const { rerender } = renderHook(
+      ({ s }) =>
+        usePositions({
+          adventureId: 'a1',
+          publish: true,
+          self: s,
+          position: null,
+        }),
+      { initialProps: { s: null as typeof self | null } },
+    )
+    await act(async () => {
+      subscribeCb.fn('SUBSCRIBED')
+    })
+    expect(track).not.toHaveBeenCalled()
+    rerender({ s: self })
+    await act(async () => {
+      subscribeCb.fn('SUBSCRIBED')
+    })
+    expect(track).toHaveBeenCalledWith({ user_id: 'u1' })
+  })
 })
