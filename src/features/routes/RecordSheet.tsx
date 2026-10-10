@@ -60,12 +60,17 @@ export default function RecordSheet({
             </div>
           </div>
         )}
-        <button
-          className="primary big"
-          onClick={() => onStart(mode, mode === 'auto' ? secs : null)}
-        >
-          Start route
-        </button>
+        <div className="stack">
+          <button
+            className="primary big"
+            onClick={() => onStart(mode, mode === 'auto' ? secs : null)}
+          >
+            Start route
+          </button>
+          <button className="big" onClick={onStop}>
+            Cancel
+          </button>
+        </div>
       </div>
     )
   }

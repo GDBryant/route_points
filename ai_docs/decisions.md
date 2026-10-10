@@ -34,3 +34,4 @@
 | 2026-10-08 | ./up and ./down wrap `supabase start/stop` + `docker compose` | CLI owns Supabase containers; compose can't stop them |
 | 2026-10-08 | Move point: "Move" in point sheet → map pans under pinned marker, Save/Cancel banner | contextmenu long-press unreliable on desktop + iOS; pan-under-pin works everywhere |
 | 2026-10-08 | Follow stops on map drag/flyTo; "Re-center" button shown only while not following | Map must stay where user put it; explicit toggle was redundant |
+| 2026-10-08 | Magic links only redirect to site_url for LAN IPs; ./up also runs Vite | GoTrue rejects non-loopback IP literals in the allow-list, so login must start at https://HOST:5173 |

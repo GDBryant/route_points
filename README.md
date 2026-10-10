@@ -32,7 +32,7 @@ npx supabase db push            # apply supabase/migrations
 npm run dev                     # https://HOST:5173
 ```
 
-Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https://HOST:5173 with a self-signed cert and Supabase API is https://HOST:54321 — on the phone open both URLs once and accept the cert warning. Magic-link emails at http://HOST:54324 (Mailpit).
+Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https://HOST:5173 with a self-signed cert and Supabase API is https://HOST:54321 — on the phone open both URLs once and accept the cert warning. Magic-link emails at http://HOST:54324 (Mailpit). Magic links redirect only to `site_url` for LAN IP origins (GoTrue rejects non-loopback IP literals in the allow-list), so log in via https://HOST:5173.
 
 ## Commands
 | Command | Purpose |
@@ -48,7 +48,7 @@ Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https
 
 ## Run with Docker
 ```sh
-./up      # Supabase + web (status monitor, Ctrl-C stops all) → http://192.168.7.58:8080
+./up      # Supabase + nginx web + Vite, live logs, Ctrl-C stops all → https://HOST:5173, http://HOST:8080
 ./down
 ```
 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY come from `.env` as build args.

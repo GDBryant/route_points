@@ -50,4 +50,20 @@ describe('RecordSheet', () => {
     fireEvent.click(screen.getByText('Start route'))
     expect(onStart).toHaveBeenCalledWith('manual', null)
   })
+
+  it('Cancel in idle calls onStop', () => {
+    const onStop = vi.fn()
+    render(
+      <RecordSheet
+        state="idle"
+        waypointCount={0}
+        elapsedS={0}
+        onStart={vi.fn()}
+        onDrop={vi.fn()}
+        onStop={onStop}
+      />,
+    )
+    fireEvent.click(screen.getByText('Cancel'))
+    expect(onStop).toHaveBeenCalledOnce()
+  })
 })
