@@ -10,6 +10,7 @@ import {
   type Member,
 } from '@/features/adventures/api'
 import AdventureSettingsSheet from '@/features/adventures/AdventureSettingsSheet'
+import ShareSheet from '@/features/adventures/ShareSheet'
 import { useAuth } from '@/features/auth/useAuth'
 import { usePoints } from '@/features/points/usePoints'
 import { savePointLocal, removePoint } from '@/features/points/repo'
@@ -57,6 +58,7 @@ export default function MapPage() {
     id: string
     name: string
     snap_radius_m: number
+    share_token: string
   } | null>(null)
   const { points, refresh } = usePoints(
     guest ? { token: token! } : { adventureId: id },
@@ -90,6 +92,7 @@ export default function MapPage() {
     forceToId?: string
   } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [showTiles, setShowTiles] = useState(false)
   const [showGpx, setShowGpx] = useState(false)
   const [headingUp, setHeadingUp] = useState(false)
@@ -592,11 +595,23 @@ export default function MapPage() {
                 }
               : undefined
           }
+          onShare={() => {
+            setShowSettings(false)
+            setShowShare(true)
+          }}
           onOfflineMaps={() => {
             setShowSettings(false)
             setShowTiles(true)
           }}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showShare && adv && (
+        <ShareSheet
+          token={adv.share_token}
+          name={adv.name}
+          onClose={() => setShowShare(false)}
         />
       )}
 

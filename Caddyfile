@@ -1,0 +1,23 @@
+{
+	local_certs
+	default_sni {$HOST}
+}
+
+https://{$HOST} {
+	handle_path /supabase/* {
+		reverse_proxy host.docker.internal:54321
+	}
+	handle {
+		reverse_proxy vite:5173
+	}
+}
+
+http://{$HOST} {
+	handle /root.crt {
+		root * /data/caddy/pki/authorities/local
+		file_server
+	}
+	handle {
+		redir https://{host}{uri}
+	}
+}

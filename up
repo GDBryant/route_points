@@ -10,10 +10,9 @@ docker compose up --build -d
 npx supabase status
 
 echo "Ctrl-C stops everything"
-echo "App (phone, https, magic links): https://$HOST:5173  |  nginx build: http://$HOST:8080  |  Mailpit: http://$HOST:54324"
+echo "App: https://$HOST  |  Phone CA cert: http://$HOST/root.crt  |  nginx build: http://$HOST:8080  |  Mailpit: http://$HOST:54324"
 for c in $(docker ps --format '{{.Names}}' --filter label=com.docker.compose.project=route_points); do
   n=${c#supabase_}; n=${n%_route_points}
   docker logs -f --tail 0 "$c" 2>&1 | sed "s/^/[$n] /" &
 done
-npm run dev 2>&1 | sed 's/^/[vite] /' &
 wait

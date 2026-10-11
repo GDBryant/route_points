@@ -5,6 +5,7 @@ export default function AdventureSettingsSheet({
   adventure,
   isOwner,
   onSaved,
+  onShare,
   onOfflineMaps,
   sharePos,
   onToggleShare,
@@ -15,6 +16,7 @@ export default function AdventureSettingsSheet({
   adventure: { id: string; name: string; snap_radius_m: number }
   isOwner: boolean
   onSaved: (snap: number, name: string) => void
+  onShare?: () => void
   onOfflineMaps?: () => void
   sharePos?: boolean
   onToggleShare?: () => void
@@ -56,6 +58,11 @@ export default function AdventureSettingsSheet({
             disabled={!isOwner}
           />
         </label>
+        {onShare && (
+          <button type="button" onClick={onShare}>
+            Share adventure
+          </button>
+        )}
         {onOfflineMaps && (
           <button type="button" onClick={onOfflineMaps}>
             Offline maps

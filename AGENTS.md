@@ -5,7 +5,7 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 ## Rules
 - HARD RULE: Be very brief in all aspects — replies, commit messages, docs, code. Result, reason, next step. No preamble, filler or recaps.
 - HARD RULE: No code comments unless asked. Compact code, no over-engineering.
-- Read `ai_docs/` before working. Update `ai_docs/decisions.md` when a design choice is made; `ai_docs/progress.md` when a milestone lands.
+- Read `docs/ai_docs/` before working. Update `docs/ai_docs/decisions.md` when a design choice is made; `docs/ai_docs/progress.md` when a milestone lands.
 
 ## Stack
 - Vite + React + TypeScript, `vite-plugin-pwa`
@@ -19,10 +19,10 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - `npm run lint` (oxlint) / `npm run typecheck` / `npm test` / `npm run format`
 - `npm run test:e2e` (Playwright; `npx playwright install chromium` first)
 - `npx supabase db push` (migrations in `supabase/migrations/`)
-- `docker compose up --build` → http://localhost:8080
+- `./up` → https://HOST (Caddy→Vite), http://HOST:8080 (nginx build); `./down`
 - `npm install` may need `--legacy-peer-deps` (npm arborist bug with vitest peers)
 
 ## Layout
 - `src/` app, `src/features/{auth,adventures,points,routes,map,tracking,sync}`
 - `supabase/` migrations, RLS policies
-- `ai_docs/` plan, decisions, progress
+- `docs/ai_docs/` plan, decisions, progress

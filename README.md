@@ -29,15 +29,15 @@ npm install
 cp .env.example .env            # fill VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 npx supabase start              # local Postgres + Auth + Realtime
 npx supabase db push            # apply supabase/migrations
-npm run dev                     # https://HOST:5173
+npm run dev                     # http://localhost:5173 (native; Playwright/CI)
 ```
 
-Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https://HOST:5173 with a self-signed cert and Supabase API is https://HOST:54321 — on the phone open both URLs once and accept the cert warning. Magic-link emails at http://HOST:54324 (Mailpit). Magic links redirect only to `site_url` for LAN IP origins (GoTrue rejects non-loopback IP literals in the allow-list), so log in via https://HOST:5173.
+Test on a phone: set `HOST` in `.env` to your LAN IP (also hardcoded in `supabase/config.toml`) and run `./up`. On the phone open http://HOST/root.crt, download, then Android Settings → Security & privacy → More security settings → Encryption & credentials → Install a certificate → CA certificate → pick root.crt. Then open https://HOST and log in; magic-link emails at http://HOST:54324 (Mailpit).
 
 ## Commands
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Dev server |
+| `npm run dev` | Native dev server http://localhost:5173 (Playwright/CI only; use `./up` otherwise) |
 | `npm run build` / `npm run preview` | Production build / serve |
 | `npm run lint` / `npm run typecheck` | ESLint / tsc |
 | `npm test` | Vitest unit tests |
@@ -48,7 +48,7 @@ Test on a phone: set `HOST` in `.env` to your LAN IP. `npm run dev` serves https
 
 ## Run with Docker
 ```sh
-./up      # Supabase + nginx web + Vite, live logs, Ctrl-C stops all → https://HOST:5173, http://HOST:8080
+./up      # Supabase + Caddy + Vite + nginx web, live logs, Ctrl-C stops all → https://HOST, http://HOST:8080
 ./down
 ```
 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY come from `.env` as build args.
@@ -138,10 +138,10 @@ src/features/{auth,adventures,points,routes,map,tracking,sync}
 supabase/migrations/      SQL migrations + RLS
 supabase/tests/           pgTAP
 e2e/                      Playwright
-ai_docs/                  plan, decisions, progress
+docs/ai_docs/             plan, decisions, progress
 ```
 
 ## Docs
-- `ai_docs/plan.md` — full plan, data model, milestones
-- `ai_docs/decisions.md` — decision log
-- `ai_docs/progress.md` — milestone status
+- `docs/ai_docs/plan.md` — full plan, data model, milestones
+- `docs/ai_docs/decisions.md` — decision log
+- `docs/ai_docs/progress.md` — milestone status

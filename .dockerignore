@@ -8,7 +8,7 @@ dev-dist
 playwright-report
 test-results
 supabase
-ai_docs
+docs
 *.md
 Dockerfile
 docker-compose.yml
