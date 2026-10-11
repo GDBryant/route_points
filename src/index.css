@@ -14,7 +14,7 @@ body,
   position: absolute;
   z-index: 1000;
   bottom: 84px;
-  right: 12px;
+  left: 12px;
   padding: 10px 14px;
   border: 0;
   border-radius: 8px;

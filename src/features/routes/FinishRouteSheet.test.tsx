@@ -29,7 +29,7 @@ const points = [
 
 const lastPos = { lat: -33.50015, lng: 18.40015, accuracy: 5, heading: 0, speed: 0 }
 
-const renderSheet = (onSave = vi.fn()) =>
+const renderSheet = (onSave = vi.fn(), onNewPoint?: () => void) =>
   render(
     <FinishRouteSheet
       route={route}
@@ -38,6 +38,7 @@ const renderSheet = (onSave = vi.fn()) =>
       snapRadiusM={20}
       routeCount={0}
       onSave={onSave}
+      onNewPoint={onNewPoint}
     />,
   )
 
@@ -63,5 +64,17 @@ describe('FinishRouteSheet', () => {
         from_point_id: 'pA',
       }),
     )
+  })
+
+  it('New point at end calls onNewPoint', () => {
+    const onNewPoint = vi.fn()
+    renderSheet(vi.fn(), onNewPoint)
+    fireEvent.click(screen.getByText('New point at end'))
+    expect(onNewPoint).toHaveBeenCalledOnce()
+  })
+
+  it('hides New point button without onNewPoint', () => {
+    renderSheet()
+    expect(screen.queryByText('New point at end')).toBeNull()
   })
 })

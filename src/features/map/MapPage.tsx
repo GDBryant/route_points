@@ -33,7 +33,9 @@ import RecordSheet from '@/features/routes/RecordSheet'
 import FinishRouteSheet, {
   type FinishInput,
 } from '@/features/routes/FinishRouteSheet'
-import RouteDetailSheet from '@/features/routes/RouteDetailSheet'
+import RouteDetailSheet, {
+  type RoutePatch,
+} from '@/features/routes/RouteDetailSheet'
 import RoutesList from '@/features/routes/RoutesList'
 import type { GeoPosition } from '@/features/tracking/useGeolocation'
 import DownloadTilesSheet from '@/features/tiles/DownloadTilesSheet'
@@ -86,6 +88,7 @@ export default function MapPage() {
   } | null>(null)
   const [recording, setRecording] = useState(false)
   const [endRouteAt, setEndRouteAt] = useState(false)
+  const [newEnd, setNewEnd] = useState(false)
   const [finishing, setFinishing] = useState<{
     route: PendingRoute
     lastPos: GeoPosition | null
@@ -150,7 +153,10 @@ export default function MapPage() {
     setAdding(null)
     setEndRouteAt(false)
     refresh()
-    if (wasEnd && saved?.id) {
+    if (newEnd && finishing && saved?.id) {
+      setNewEnd(false)
+      setFinishing({ ...finishing, forceToId: saved.id })
+    } else if (wasEnd && saved?.id) {
       const res = await recorder.stop()
       if (res.route)
         setFinishing({ ...res, route: res.route, forceToId: saved.id })
@@ -221,21 +227,21 @@ export default function MapPage() {
     refreshRoutes()
   }
 
-  const onRouteDirection = async (r: RouteRow, dir: string) => {
+  const onRouteUpdate = async (r: RouteRow, patch: RoutePatch) => {
     await saveRouteLocal({
       adventure_id: id,
       client_id: r.client_id,
-      name: r.name,
-      from_point_id: r.from_point_id,
-      to_point_id: r.to_point_id,
-      direction: dir,
+      name: patch.name,
+      from_point_id: patch.from_point_id,
+      to_point_id: patch.to_point_id,
+      direction: patch.direction,
       mode: r.mode,
       interval_s: r.interval_s,
       started_at: r.started_at ?? undefined,
       ended_at: r.ended_at,
     })
     refreshRoutes()
-    setSelectedRoute({ ...r, direction: dir })
+    setSelectedRoute({ ...r, ...patch })
   }
 
   const onRouteDelete = async (r: RouteRow) => {
@@ -497,7 +503,10 @@ export default function MapPage() {
           endRouteAt={endRouteAt}
           onEndRouteAt={setEndRouteAt}
           onSave={savePoint}
-          onClose={() => setAdding(null)}
+          onClose={() => {
+            setAdding(null)
+            setNewEnd(false)
+          }}
         />
       )}
 
@@ -525,7 +534,7 @@ export default function MapPage() {
           route={selectedRoute}
           points={points}
           isEditor={isEditor}
-          onDirection={onRouteDirection}
+          onUpdate={onRouteUpdate}
           onDelete={onRouteDelete}
           onClose={() => setSelectedRoute(null)}
         />
@@ -564,8 +573,9 @@ export default function MapPage() {
         />
       )}
 
-      {finishing && (
+      {finishing && !adding && (
         <FinishRouteSheet
+          key={finishing.forceToId ?? ''}
           route={finishing.route}
           lastPos={finishing.lastPos}
           points={points}
@@ -573,6 +583,18 @@ export default function MapPage() {
           routeCount={routes.length}
           forceToId={finishing.forceToId}
           onSave={saveRoute}
+          onNewPoint={
+            finishing.lastPos
+              ? () => {
+                  setNewEnd(true)
+                  setAdding({
+                    lat: finishing.lastPos!.lat,
+                    lng: finishing.lastPos!.lng,
+                    accuracy: finishing.lastPos!.accuracy,
+                  })
+                }
+              : undefined
+          }
         />
       )}
 

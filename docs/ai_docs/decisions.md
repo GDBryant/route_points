@@ -36,3 +36,4 @@
 | 2026-10-08 | Follow stops on map drag/flyTo; "Re-center" button shown only while not following | Map must stay where user put it; explicit toggle was redundant |
 | 2026-10-08 | Magic links only redirect to site_url for LAN IPs; ./up also runs Vite | GoTrue rejects non-loopback IP literals in the allow-list, so login must start at https://HOST:5173 |
 | 2026-10-08 | Caddy local CA + containerised Vite, single origin https://HOST with /supabase prefix to Kong | Phone needs trusted cert for IP origin; app should run in containers |
+| 2026-10-08 | Points/routes: server pk = client-generated `client_id` (migration 0005) | offline rows keep stable ids and FK refs survive sync |

@@ -20,6 +20,7 @@ export default function FinishRouteSheet({
   routeCount,
   forceToId,
   onSave,
+  onNewPoint,
 }: {
   route: PendingRoute
   lastPos: GeoPosition | null
@@ -28,6 +29,7 @@ export default function FinishRouteSheet({
   routeCount: number
   forceToId?: string
   onSave: (input: FinishInput) => void
+  onNewPoint?: () => void
 }) {
   const suggested = forceToId
     ? (points.find((p) => p.id === forceToId) ?? null)
@@ -79,6 +81,11 @@ export default function FinishRouteSheet({
             ))}
           </select>
         </label>
+        {onNewPoint && (
+          <button type="button" onClick={onNewPoint}>
+            New point at end
+          </button>
+        )}
         <div className="segmented">
           {['both', 'forward', 'reverse'].map((d) => (
             <button
