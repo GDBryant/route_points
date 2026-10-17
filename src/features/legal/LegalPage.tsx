@@ -46,8 +46,9 @@ export function PrivacyPage() {
       </p>
       <h2>Retention and deletion</h2>
       <p>
-        Data is kept while your account exists. Delete points, routes and adventures in the
-        app at any time. To delete your account and all associated data, email {CONTACT}.
+        Adventures unopened for 60 days, and accounts inactive for 60 days that own no
+        adventures, are deleted automatically (see Terms). Delete points, routes and
+        adventures in the app at any time. To delete your account and all associated data, email {CONTACT}.
       </p>
       <h2>Your rights</h2>
       <p>
@@ -95,6 +96,13 @@ export function TermsPage() {
       <p>
         Do not misuse the service, attempt to access other users' data, or place excessive
         load on it (for example bulk tile downloads beyond the in-app limits).
+      </p>
+      <h2>Inactivity</h2>
+      <p>
+        Adventures that no member has opened for 60 days are deleted, together with their
+        points, routes and positions. Accounts that have not signed in or opened an adventure
+        for 60 days, and own no remaining adventures, are deleted. This is automatic and
+        permanent; export GPX before an event if you want to keep a record.
       </p>
       <h2>Availability</h2>
       <p>
