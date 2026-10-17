@@ -14,19 +14,26 @@ export async function syncRoutesFromServer(adventureId: string) {
       .where("adventure_id")
       .equals(adventureId)
       .toArray();
-    const remoteIds = new Set(remote.map((r) => r.id));
+    const items = await db.outbox.toArray();
     const pendingClientIds = new Set(
-      (await db.outbox.toArray())
+      items
         .filter((i) => i.kind === "upsert_route")
         .map((i) => (i.payload as { client_id: string }).client_id),
     );
+    const pendingDeleteIds = new Set(
+      items
+        .filter((i) => i.kind === "delete_route")
+        .map((i) => (i.payload as { id: string }).id),
+    );
+    const live = remote.filter((r) => !pendingDeleteIds.has(r.id));
+    const remoteIds = new Set(live.map((r) => r.id));
     for (const r of local) {
       if (!remoteIds.has(r.id) && !pendingClientIds.has(r.client_id))
         await db.routes.delete(r.id);
     }
     const localByClient = new Map(local.map((r) => [r.client_id, r]));
     await db.routes.bulkPut(
-      remote.map((r) =>
+      live.map((r) =>
         r.coords.length
           ? r
           : {

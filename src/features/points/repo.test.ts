@@ -73,6 +73,18 @@ describe("points repo", () => {
     expect(ids).toEqual([temp.id, "srv1"].sort());
   });
 
+  it("pending delete_point keeps synced-deleted point out", async () => {
+    await db.outbox.add({
+      kind: "delete_point",
+      payload: { id: "srv1" },
+      created_at: new Date().toISOString(),
+      attempts: 0,
+      last_error: null,
+    });
+    await syncPointsFromServer("adv1");
+    expect(await db.points.get("srv1")).toBeUndefined();
+  });
+
   it("removePoint on temp row drops the pending outbox item", async () => {
     const temp = await savePointLocal("adv1", {
       name: "tmp",

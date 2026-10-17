@@ -253,7 +253,6 @@ export default function MapPage() {
   const onRouteDelete = async (r: RouteRow) => {
     await removeRoute(r);
     setSelectedRoute(null);
-    refreshRoutes();
   };
 
   const zoomToAdventure = () => {

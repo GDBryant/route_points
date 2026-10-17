@@ -10,12 +10,19 @@ export async function syncPointsFromServer(adventureId: string) {
       .where("adventure_id")
       .equals(adventureId)
       .toArray();
-    const remoteIds = new Set(remote.map((p) => p.id));
+    const items = await db.outbox.toArray();
     const pendingClientIds = new Set(
-      (await db.outbox.toArray())
+      items
         .filter((i) => i.kind === "upsert_point")
         .map((i) => (i.payload as { client_id: string }).client_id),
     );
+    const pendingDeleteIds = new Set(
+      items
+        .filter((i) => i.kind === "delete_point")
+        .map((i) => (i.payload as { id: string }).id),
+    );
+    const live = remote.filter((p) => !pendingDeleteIds.has(p.id));
+    const remoteIds = new Set(live.map((p) => p.id));
     for (const p of local) {
       if (
         !remoteIds.has(p.id) &&
@@ -24,7 +31,7 @@ export async function syncPointsFromServer(adventureId: string) {
         await db.points.delete(p.id);
     }
     await db.points.bulkPut(
-      remote.map((p) => ({ ...p, adventure_id: adventureId })),
+      live.map((p) => ({ ...p, adventure_id: adventureId })),
     );
   });
 }
