@@ -1,4 +1,18 @@
 import { bearingDeg, haversineM } from '@/lib/geo'
+import type { Point } from '@/features/points/api'
+
+export function withEndpoints(
+  coords: [number, number][],
+  from?: Point | null,
+  to?: Point | null,
+): [number, number][] {
+  if (coords.length === 0 || (!from && !to)) return coords
+  const out: [number, number][] = []
+  if (from) out.push([from.lng, from.lat])
+  out.push(...coords)
+  if (to) out.push([to.lng, to.lat])
+  return out
+}
 
 export function arrowPositions(coords: [number, number][]) {
   const arrows: { pos: [number, number]; bearing: number }[] = []

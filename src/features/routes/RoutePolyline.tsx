@@ -2,24 +2,30 @@ import { useMemo } from 'react'
 import { Marker, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import type { RouteRow } from './api'
-import { arrowPositions } from './routeUtils'
+import type { Point } from '@/features/points/api'
+import { arrowPositions, withEndpoints } from './routeUtils'
 
 const COLOUR = '#7b3fb3'
 
 export default function RoutePolyline({
   route,
+  from,
+  to,
   onTap,
 }: {
   route: RouteRow
+  from?: Point | null
+  to?: Point | null
   onTap?: (r: RouteRow) => void
 }) {
+  const coords = useMemo(() => withEndpoints(route.coords, from, to), [route.coords, from, to])
   const positions = useMemo(
-    () => route.coords.map(([lng, lat]) => [lat, lng] as [number, number]),
-    [route.coords],
+    () => coords.map(([lng, lat]) => [lat, lng] as [number, number]),
+    [coords],
   )
   const arrows = useMemo(
-    () => (route.direction !== 'both' ? arrowPositions(route.coords) : []),
-    [route.direction, route.coords],
+    () => (route.direction !== 'both' ? arrowPositions(coords) : []),
+    [route.direction, coords],
   )
   const arrowIcons = useMemo(
     () =>

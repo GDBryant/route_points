@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Circle,
   CircleMarker,
@@ -154,6 +154,7 @@ export default function MapView({
   const [following, setFollowing] = useState(true)
   const [center, setCenter] = useState<[number, number] | null>(null)
   const stopFollowing = useCallback(() => setFollowing(false), [])
+  const byId = useMemo(() => new Map(points.map((p) => [p.id, p])), [points])
 
   useEffect(() => {
     if (movingId && center) onCenterChange?.(center[0], center[1])
@@ -190,7 +191,13 @@ export default function MapView({
           />
         ))}
         {routes.map((r) => (
-          <RoutePolyline key={r.id} route={r} onTap={onRouteTap} />
+          <RoutePolyline
+            key={r.id}
+            route={r}
+            from={byId.get(r.from_point_id ?? '')}
+            to={byId.get(r.to_point_id ?? '')}
+            onTap={onRouteTap}
+          />
         ))}
         {others.map((o) => (
           <MemberMarker key={o.user_id} pos={o} />
