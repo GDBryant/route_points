@@ -88,17 +88,14 @@ export async function queueWaypoints(
 
 export async function removeRoute(route: RouteRow) {
   await db.routes.delete(route.id);
-  if (route.id === route.client_id) {
-    const items = await db.outbox.toArray();
-    for (const i of items) {
-      const p = i.payload as { client_id?: string; route_client_id?: string };
-      if (
-        (i.kind === "upsert_route" && p.client_id === route.client_id) ||
-        (i.kind === "add_waypoints" && p.route_client_id === route.client_id)
-      )
-        await db.outbox.delete(i.id!);
-    }
-    return;
+  const items = await db.outbox.toArray();
+  for (const i of items) {
+    const p = i.payload as { client_id?: string; route_client_id?: string };
+    if (
+      (i.kind === "upsert_route" && p.client_id === route.client_id) ||
+      (i.kind === "add_waypoints" && p.route_client_id === route.client_id)
+    )
+      await db.outbox.delete(i.id!);
   }
   await enqueue("delete_route", { id: route.id });
 }

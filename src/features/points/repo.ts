@@ -73,16 +73,13 @@ export async function savePointLocal(
 
 export async function removePoint(point: Point) {
   await db.points.delete(point.id);
-  if (point.client_id && point.id === point.client_id) {
-    const items = await db.outbox.toArray();
-    for (const i of items) {
-      if (
-        i.kind === "upsert_point" &&
-        (i.payload as { client_id: string }).client_id === point.client_id
-      )
-        await db.outbox.delete(i.id!);
-    }
-    return;
+  const items = await db.outbox.toArray();
+  for (const i of items) {
+    if (
+      i.kind === "upsert_point" &&
+      (i.payload as { client_id: string }).client_id === point.client_id
+    )
+      await db.outbox.delete(i.id!);
   }
   await enqueue("delete_point", { id: point.id });
 }

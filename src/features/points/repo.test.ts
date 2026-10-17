@@ -85,7 +85,7 @@ describe("points repo", () => {
     expect(await db.points.get("srv1")).toBeUndefined();
   });
 
-  it("removePoint on temp row drops the pending outbox item", async () => {
+  it("removePoint drops pending upsert and queues server delete", async () => {
     const temp = await savePointLocal("adv1", {
       name: "tmp",
       kind: "obstacle",
@@ -97,6 +97,8 @@ describe("points repo", () => {
     });
     await removePoint(temp);
     expect(await db.points.get(temp.id)).toBeUndefined();
-    expect(await db.outbox.count()).toBe(0);
+    const items = await db.outbox.toArray();
+    expect(items.map((i) => i.kind)).toEqual(["delete_point"]);
+    expect(items[0].payload).toEqual({ id: temp.id });
   });
 });
