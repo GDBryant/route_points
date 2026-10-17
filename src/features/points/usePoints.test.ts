@@ -23,19 +23,17 @@ vi.mock("./api", async (importOriginal) => {
   const mod = await importOriginal<typeof import("./api")>();
   return {
     ...mod,
-    listPoints: vi
-      .fn()
-      .mockResolvedValue([
-        {
-          id: "a",
-          name: "a",
-          kind: "obstacle",
-          seq: null,
-          lat: 0,
-          lng: 0,
-          note: null,
-        },
-      ]),
+    listPoints: vi.fn().mockResolvedValue([
+      {
+        id: "a",
+        name: "a",
+        kind: "obstacle",
+        seq: null,
+        lat: 0,
+        lng: 0,
+        note: null,
+      },
+    ]),
     subscribePoints: vi.fn((_id: string, fn: typeof cb) => {
       cb = fn;
       return () => {};
