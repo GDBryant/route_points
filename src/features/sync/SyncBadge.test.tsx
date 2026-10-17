@@ -8,12 +8,15 @@ vi.mock("@/lib/db", () => ({
       where: () => ({
         aboveOrEqual: () => ({ toArray: vi.fn().mockResolvedValue([]) }),
       }),
+      update: vi.fn().mockResolvedValue(1),
     },
   },
 }));
 
 vi.mock("dexie-react-hooks", () => ({
-  useLiveQuery: vi.fn(() => []),
+  useLiveQuery: vi.fn(() => [
+    { id: 1, kind: "upsert_point", last_error: "boom" },
+  ]),
 }));
 
 const base = { online: true, pending: 0, dead: 0, syncing: false };
@@ -50,5 +53,7 @@ describe("SyncBadge", () => {
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByText(/Failed sync items/)).toBeInTheDocument();
     expect(onSync).not.toHaveBeenCalled();
+    expect(screen.getByText("Later")).toBeInTheDocument();
+    expect(screen.queryByText("Discard")).toBeNull();
   });
 });

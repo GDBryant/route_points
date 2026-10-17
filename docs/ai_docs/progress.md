@@ -25,3 +25,4 @@
 - 2026-10-17 UX: routes connected to endpoints, geolocation timeout, controls below banner, sync badge moved, Install/Exit in settings + ⎋ tab, README deploy docs. Custom domain rpa.roamingsolutions.net live. Google OAuth pending (console steps in README).
 - 2026-10-17 Google OAuth live (Workspace project, External audience). Logo + PWA icons, /privacy + /terms pages. Migration 0006: pg_cron nightly purge of adventures/users inactive >60 days, pushed to cloud.
 - 2026-10-17 Delete adventure, owner-only, cascades + local cache cleared.
+- 2026-10-17 Sync UX: SVG icon, tap toast, amber when unsynced/offline; failed items get Later (1h snooze) instead of Discard — queued writes never dropped.

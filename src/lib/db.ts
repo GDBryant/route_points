@@ -26,6 +26,7 @@ export interface OutboxItem {
   created_at: string;
   attempts: number;
   last_error: string | null;
+  snoozed_until?: string | null;
 }
 
 export interface TileMeta {

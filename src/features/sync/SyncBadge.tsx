@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { MAX_ATTEMPTS } from "./outbox";
+import { MAX_ATTEMPTS, snooze } from "./outbox";
 
 function SyncIcon() {
   return (
@@ -41,12 +41,16 @@ export default function SyncBadge({
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deadItems = useLiveQuery(
-    () => (open ? db.outbox.where("attempts").aboveOrEqual(MAX_ATTEMPTS).toArray() : []),
+    () =>
+      open
+        ? db.outbox.where("attempts").aboveOrEqual(MAX_ATTEMPTS).toArray()
+        : [],
     [open],
     [],
   );
 
-  const shown = toast?.startsWith("Syncing") && pending === 0 ? "All synced" : toast;
+  const shown =
+    toast?.startsWith("Syncing") && pending === 0 ? "All synced" : toast;
 
   const tap = () => {
     if (dead > 0) {
@@ -66,7 +70,10 @@ export default function SyncBadge({
 
   return (
     <>
-      <button className={`sync-badge${online ? "" : " offline"}`} onClick={tap}>
+      <button
+        className={`sync-badge${online ? "" : " offline"}${pending + dead > 0 ? " pending" : ""}`}
+        onClick={tap}
+      >
         <span className={syncing ? "spin" : undefined}>
           <SyncIcon />
         </span>
@@ -81,6 +88,7 @@ export default function SyncBadge({
       {open && (
         <div className="sheet" role="dialog">
           <h3>Failed sync items ({deadItems?.length ?? 0})</h3>
+          <p className="muted">Later pauses retries for an hour.</p>
           <ul className="list">
             {(deadItems ?? []).map((i) => (
               <li key={i.id} className="card">
@@ -96,9 +104,7 @@ export default function SyncBadge({
                 >
                   Retry
                 </button>
-                <button className="danger" onClick={() => db.outbox.delete(i.id!)}>
-                  Discard
-                </button>
+                <button onClick={() => snooze(i.id!)}>Later</button>
               </li>
             ))}
           </ul>

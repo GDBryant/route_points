@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { drain, enqueue, MAX_ATTEMPTS } from "./outbox";
+import { drain, enqueue, MAX_ATTEMPTS, snooze } from "./outbox";
 import { db } from "@/lib/db";
 
 const upsertPoint = vi.fn();
@@ -70,6 +70,21 @@ describe("outbox", () => {
     expect(item.last_error).toBe("not_editor");
     await drain();
     expect(upsertPoint).toHaveBeenCalledTimes(MAX_ATTEMPTS);
+  });
+
+  it("skips snoozed items, drains expired snooze", async () => {
+    upsertPoint.mockResolvedValue({ id: "srv" });
+    await enqueue("upsert_point", payload);
+    const id = (await db.outbox.toArray())[0].id!;
+    await snooze(id);
+    let res = await drain();
+    expect(res.done).toBe(0);
+    expect(upsertPoint).not.toHaveBeenCalled();
+    await db.outbox.update(id, {
+      snoozed_until: new Date(Date.now() - 1000).toISOString(),
+    });
+    res = await drain();
+    expect(res.done).toBe(1);
   });
 
   it("upsert_position is latest-wins (replaces pending)", async () => {

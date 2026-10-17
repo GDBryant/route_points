@@ -14,6 +14,14 @@ import {
 import { upsertPosition, type PositionInput } from "@/features/live/api";
 
 export const MAX_ATTEMPTS = 5;
+export const SNOOZE_MS = 60 * 60 * 1000;
+
+export async function snooze(id: number) {
+  await db.outbox.update(id, {
+    attempts: 0,
+    snoozed_until: new Date(Date.now() + SNOOZE_MS).toISOString(),
+  });
+}
 
 let drainScheduled = false;
 
@@ -86,9 +94,15 @@ async function drainLoop(): Promise<DrainResult> {
   const res: DrainResult = { done: 0, failed: 0, stoppedOffline: false };
   const attempted = new Set<number>();
   for (;;) {
+    const now = new Date().toISOString();
     const item = await db.outbox
       .orderBy("id")
-      .filter((i) => i.attempts < MAX_ATTEMPTS && !attempted.has(i.id!))
+      .filter(
+        (i) =>
+          i.attempts < MAX_ATTEMPTS &&
+          (!i.snoozed_until || i.snoozed_until <= now) &&
+          !attempted.has(i.id!),
+      )
       .first();
     if (!item) break;
     attempted.add(item.id!);
