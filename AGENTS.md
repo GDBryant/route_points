@@ -12,15 +12,15 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - Leaflet + OpenStreetMap (`react-leaflet`)
 - Supabase: Auth, Postgres + PostGIS, Realtime
 - Offline: IndexedDB (Dexie) queue, sync on reconnect; cached tiles
-- Hosting: Cloudflare Pages (Netlify fallback) + Supabase cloud
+- Hosting: Cloudflare Pages (auto-deploy from `main`, https://rpa.roamingsolutions.net) + Supabase cloud (ref `neegnbmdioqfgatneits`)
 
 ## Commands
 - `npm run dev` / `npm run build` / `npm run preview`
 - `npm run lint` (oxlint) / `npm run typecheck` / `npm test` / `npm run format`
 - `npm run test:e2e` (Playwright; `npx playwright install chromium` first)
-- `npx supabase db push` (migrations in `supabase/migrations/`)
+- `npx supabase db push --linked` (migrations in `supabase/migrations/`); commit lockfile after dep changes or Pages `npm ci` fails
 - `./up` → https://HOST (Caddy→Vite), http://HOST:8080 (nginx build); `./down`
-- `npm install` may need `--legacy-peer-deps` (npm arborist bug with vitest peers)
+- Node 24 (`.nvmrc`). `npm install` may need `--legacy-peer-deps` (npm arborist bug with vitest peers)
 
 ## Layout
 - `src/` app, `src/features/{auth,adventures,points,routes,map,tracking,sync}`

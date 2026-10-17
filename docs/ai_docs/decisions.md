@@ -37,4 +37,10 @@
 | 2026-10-08 | Magic links only redirect to site_url for LAN IPs; ./up also runs Vite | GoTrue rejects non-loopback IP literals in the allow-list, so login must start at https://HOST:5173 |
 | 2026-10-08 | Caddy local CA + containerised Vite, single origin https://HOST with /supabase prefix to Kong | Phone needs trusted cert for IP origin; app should run in containers |
 | 2026-10-08 | Points/routes: server pk = client-generated `client_id` (migration 0005) | offline rows keep stable ids and FK refs survive sync |
-- Routes drawn connected to from/to points at render time (withEndpoints); stored waypoints unchanged so point edits move the line.
+| 2026-10-17 | Cloudflare Pages, not Workers | Worker custom domains need the DNS zone on Cloudflare; roamingsolutions.net stays on external DNS, Pages accepts a plain CNAME |
+| 2026-10-17 | Node 24 in `.nvmrc` + `NODE_VERSION` | jsdom 30 requires ≥22.22.2; Pages image had 22.22.0 |
+| 2026-10-17 | Keepalive pings `/rest/v1/adventures?limit=1` | `/rest/v1/` root rejects the publishable key (service role only) |
+| 2026-10-17 | Routes drawn connected to from/to points at render time (`withEndpoints`) | stored waypoints unchanged so point edits move the line |
+| 2026-10-17 | `watchPosition` timeout 20 s | silent hang on Brave/Android gave no error; timeout surfaces it |
+| 2026-10-17 | Top banner adds `.has-banner` → shifts Leaflet controls + sync badge; sync badge sits below layers control | both overlapped at top-right |
+| 2026-10-17 | Install app + Exit adventure in settings sheet; `⎋` tab in tabbar | install was only on adventures list; no way back from map |
