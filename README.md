@@ -4,14 +4,17 @@ Mobile-first PWA for off-road adventures. Create an **adventure**, drop named **
 
 Built for events where drivers must reach a series of obstacles with no roads: the recorded routes are the only way around.
 
+Live: https://rpa.roamingsolutions.net (also https://route-points.pages.dev)
+
 ## Features
 - Points: add at current GPS fix or by long-press on map; flag markers with labels
-- Routes: manual "drop waypoint" button or auto-drop on a 5 s – 5 min log-scale interval; route end snaps to a nearby point (default 20 m); optional direction
+- Routes: manual "drop waypoint" button or auto-drop on a 5 s – 5 min log-scale interval; route end snaps to a nearby point (default 20 m); optional direction; editable name/from/to/direction; drawn connected to their from/to points
 - Live positions of up to 10 editors; 100–200 read-only viewers via share link (no login)
 - Share adventure via WhatsApp / copy link
 - Offline-first: points and routes queued locally and synced later; downloadable OSM and Esri satellite tiles
 - GPX export/import
-- Installable PWA (Android/iOS), screen-on tracking via Wake Lock
+- Installable PWA (Android/iOS) — "Install app" in adventure settings; screen-on tracking via Wake Lock
+- Exit adventure from settings or the `⎋` tabbar icon
 
 ## Stack
 - Vite + React + TypeScript, `vite-plugin-pwa`
@@ -21,12 +24,12 @@ Built for events where drivers must reach a series of obstacles with no roads: t
 - Tests: Vitest, pgTAP, Playwright
 
 ## Setup
-Prereqs: Node 22+, npm, Docker (for local Supabase), [Supabase CLI](https://supabase.com/docs/guides/cli).
+Prereqs: Node 24 (`.nvmrc`), npm, Docker (for local Supabase), [Supabase CLI](https://supabase.com/docs/guides/cli).
 
 ```sh
 git clone <repo-url> route_points && cd route_points
-npm install
-cp .env.example .env            # fill VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+npm install --legacy-peer-deps
+cp .env.example .env            # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (local keys from `npx supabase status`)
 npx supabase start              # local Postgres + Auth + Realtime
 npx supabase db push            # apply supabase/migrations
 npm run dev                     # http://localhost:5173 (native; Playwright/CI)
@@ -39,7 +42,7 @@ Test on a phone: set `HOST` in `.env` to your LAN IP (also hardcoded in `supabas
 |---------|---------|
 | `npm run dev` | Native dev server http://localhost:5173 (Playwright/CI only; use `./up` otherwise) |
 | `npm run build` / `npm run preview` | Production build / serve |
-| `npm run lint` / `npm run typecheck` | ESLint / tsc |
+| `npm run lint` / `npm run typecheck` | oxlint / tsc |
 | `npm test` | Vitest unit tests |
 | `npm run test:e2e` | Playwright (mobile viewport, mocked Geolocation) |
 | `npx supabase test db` | pgTAP RLS/trigger tests |
@@ -80,34 +83,35 @@ Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `m
    git add src/lib/database.types.ts && git commit -m "chore: cloud DB types"
    ```
    `link` asks for the DB password. Verify in dashboard → Table Editor that the tables exist and Database → Extensions shows `postgis`.
-4. Copy API keys: Settings → API → **Project URL** and **anon / publishable** key. Never ship the `service_role` / secret key to the frontend.
+4. Copy API keys: Settings → API Keys → **Project URL** and **publishable** key (`sb_publishable_…`; the local `supabase start` key is different). Never ship the `service_role` / secret key to the frontend.
 5. **Auth → URL Configuration** (fill in after step 3 of Cloudflare below, once you know the URL):
-   - Site URL: `https://route-points.pages.dev` (or your custom domain)
-   - Redirect URLs: `https://route-points.pages.dev/**`, `https://*.route-points.pages.dev/**` (preview deploys), `https://your.domain/**`
+   - Site URL: `https://rpa.roamingsolutions.net` (no wildcards/scheme-less values)
+   - Redirect URLs: `https://rpa.roamingsolutions.net/**`, `https://route-points.pages.dev/**`, `https://*.route-points.pages.dev/**` (preview deploys) — the app redirects to `/adventures` and `/join/…`, so the `/**` suffix is required
 6. **Auth → Providers → Email**: keep enabled, Confirm email on (magic links). Supabase's built-in mailer is dev-only (few emails/hour, may be restricted to team addresses) — set **Project Settings → Auth → SMTP** to a real provider (e.g. Resend/Brevo free tier) before inviting others.
 7. **Auth → Providers → Google** (optional, `LoginPage` offers it):
-   1. console.cloud.google.com → new project → **APIs & Services → OAuth consent screen**: External, app name, support email; add yourself as test user while in Testing mode (publish to let anyone sign in).
-   2. **Credentials → Create credentials → OAuth client ID** → Web application. Authorized redirect URI: `https://<ref>.supabase.co/auth/v1/callback` (shown in the Supabase Google provider panel). Authorized JS origin: your Pages URL.
+   1. console.cloud.google.com → new project → **Google Auth Platform → Branding**: External, app name, support email; **Audience**: add yourself as test user while in Testing mode (publish to let anyone sign in).
+   2. **Clients → Create client** → Web application. Authorised JS origins: `https://rpa.roamingsolutions.net`, `https://route-points.pages.dev`. Authorised redirect URI: `https://neegnbmdioqfgatneits.supabase.co/auth/v1/callback`.
    3. Paste Client ID + secret into Supabase, enable, save.
 8. Realtime is on by default (live positions use broadcast/presence; no table replication needed).
+9. **Paused project** (free tier, idle ~7 days): dashboard → project → **Restore/Resume**. Postgres takes a few minutes to accept connections after resume (`supabase migration list --linked` fails with `ECONNREFUSED` until then). Then `npx supabase migration list --linked` and `npx supabase db push --linked` for any unapplied migrations.
 
 #### 3. Cloudflare Pages
 1. Sign up at dash.cloudflare.com (no domain required).
-2. **Workers & Pages → Create → Pages → Connect to Git** → authorize the Cloudflare GitHub app for the `route_points` repo.
+2. **Workers & Pages → Create → Pages → Connect to Git** → authorize the Cloudflare GitHub app for the `route_points` repo. Use **Pages**, not Workers: a Worker custom domain requires the DNS zone on Cloudflare; Pages custom domains work with external DNS via CNAME.
 3. Build settings:
    - Production branch: `main`
-   - Framework preset: None (or Vite)
+   - Framework preset: None
    - Build command: `npm ci --legacy-peer-deps && npm run build`
    - Build output directory: `dist`
-   - Environment variables (set for **Production and Preview**): `NODE_VERSION=22`, `VITE_SUPABASE_URL=https://<ref>.supabase.co`, `VITE_SUPABASE_ANON_KEY=<anon key>`
+   - Environment variables (set for **Production and Preview**): `NODE_VERSION=24` (jsdom needs ≥22.22.2), `VITE_SUPABASE_URL=https://<ref>.supabase.co`, `VITE_SUPABASE_ANON_KEY=<anon key>`
 4. **Save and Deploy**. First build ~2 min → `https://route-points.pages.dev`. `public/_redirects` (SPA fallback) and `public/_headers` (no-cache `sw.js`/`index.html`, immutable `assets/`) are picked up automatically.
-5. Optional custom domain: project → **Custom domains** → add; Cloudflare handles DNS/TLS if the domain is on Cloudflare, otherwise add the CNAME it shows. Then add the domain to Supabase Site URL / Redirect URLs.
+5. Custom domain: project → **Custom domains** → add `rpa.roamingsolutions.net`; at the external DNS host add `CNAME rpa → route-points.pages.dev` (Cloudflare issues TLS). Then add the domain to Supabase Site URL / Redirect URLs.
 6. Smoke test on a phone: open the URL, request a magic link, click it (must land back on the app logged in), create an adventure, add a point, confirm it appears in Supabase Table Editor. Install the PWA (Add to Home Screen).
 
 Netlify fallback: New site → Import from Git → same env vars; `netlify.toml` already defines build/redirects/headers.
 
 #### 4. GitHub secrets (keepalive)
-Repo → **Settings → Secrets and variables → Actions**: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (cloud values). `.github/workflows/keepalive.yml` pings the API every Monday so the free project isn't paused; trigger it once manually via Actions → Supabase keepalive → Run workflow to confirm it passes.
+Repo → **Settings → Secrets and variables → Actions**: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (cloud values). `.github/workflows/keepalive.yml` pings `/rest/v1/adventures?limit=1` every Monday (the `/rest/v1/` root needs the service-role key) so the free project isn't paused; trigger it once manually via Actions → Supabase keepalive → Run workflow to confirm it passes.
 
 #### 5. Docker (self-host alternative)
 `docker compose up --build` → http://localhost:8080 (nginx serving `dist`, Supabase URL/key baked in from `.env` at build time). Put it behind HTTPS (Caddy/Traefik) — Geolocation and service workers require a secure origin.
@@ -121,7 +125,7 @@ Repo → **Settings → Secrets and variables → Actions**: add `SUPABASE_URL` 
    npx supabase test db                # pgTAP (RLS/triggers)
    npx supabase gen types typescript --local > src/lib/database.types.ts
    ```
-   Keep migrations backward-compatible with the frontend currently live (add columns/tables first, remove in a later release) — DB push and frontend deploy are not atomic.
+   `npm ci` in Cloudflare fails if `package-lock.json` is out of sync with `package.json` — run `npm install --legacy-peer-deps` and commit the lockfile after dependency changes. Keep migrations backward-compatible with the frontend currently live (add columns/tables first, remove in a later release) — DB push and frontend deploy are not atomic.
 3. **Push + PR**: `git push -u origin HEAD && gh pr create`. CI runs; Cloudflare builds a **preview** at `https://<hash>.route-points.pages.dev` (link in the PR checks) — test there on a phone; auth works via the wildcard redirect URL.
 4. **Deploy DB first** (if step 2): `./scripts/deploy-db.sh`. Check dashboard → Database → Migrations shows the new version.
 5. **Merge to `main`** (`gh pr merge --squash`). Cloudflare auto-builds production (~2 min; watch under Deployments). Open PWAs pick up the new service worker on next launch and show the update toast.
