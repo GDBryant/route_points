@@ -447,6 +447,17 @@ button.big {
   }
 }
 
+.about {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
 .sync-badge.pending {
   background: #fff3cd;
   border-color: #e6b800;
