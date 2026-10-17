@@ -22,3 +22,4 @@
 - 2026-10-08 Route edit (name/from/to/direction via RouteDetailSheet edit mode → upsert_route), FinishRouteSheet "New point at end" (save point mid-flow, To preselected), migration 0005 makes server pk = client_id.
 - 2026-10-17 Deployed: Supabase resumed + 0005 pushed, Cloudflare Pages https://route-points.pages.dev (build vars VITE_*, NODE_VERSION=24), keepalive workflow pings adventures table. Custom domain rpa.roamingsolutions.net pending (CNAME → route-points.pages.dev).
 - 2026-10-17 UX: routes connected to endpoints, geolocation timeout, controls below banner, sync badge moved, Install/Exit in settings + ⎋ tab, README deploy docs. Custom domain rpa.roamingsolutions.net live. Google OAuth pending (console steps in README).
+- 2026-10-17 Google OAuth live (Workspace project, External audience). Logo + PWA icons, /privacy + /terms pages. Migration 0006: pg_cron nightly purge of adventures/users inactive >60 days, pushed to cloud.
