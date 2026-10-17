@@ -7,6 +7,7 @@ Built for events where drivers must reach a series of obstacles with no roads: t
 Live: https://rpa.roamingsolutions.net (also https://route-points.pages.dev)
 
 ## Features
+
 - Points: add at current GPS fix or by long-press on map; flag markers with labels
 - Routes: manual "drop waypoint" button or auto-drop on a 5 s – 5 min log-scale interval; route end snaps to a nearby point (default 20 m); optional direction; editable name/from/to/direction; drawn connected to their from/to points
 - Live positions of up to 10 editors; 100–200 read-only viewers via share link (no login)
@@ -17,6 +18,7 @@ Live: https://rpa.roamingsolutions.net (also https://route-points.pages.dev)
 - Exit adventure from settings or the `⎋` tabbar icon
 
 ## Stack
+
 - Vite + React + TypeScript, `vite-plugin-pwa`
 - Leaflet + OpenStreetMap / Esri World Imagery (`react-leaflet`)
 - Supabase: Auth, Postgres + PostGIS, Realtime
@@ -24,6 +26,7 @@ Live: https://rpa.roamingsolutions.net (also https://route-points.pages.dev)
 - Tests: Vitest, pgTAP, Playwright
 
 ## Setup
+
 Prereqs: Node 24 (`.nvmrc`), npm, Docker (for local Supabase), [Supabase CLI](https://supabase.com/docs/guides/cli).
 
 ```sh
@@ -38,33 +41,39 @@ npm run dev                     # http://localhost:5173 (native; Playwright/CI)
 Test on a phone: set `HOST` in `.env` to your LAN IP (also hardcoded in `supabase/config.toml`) and run `./up`. On the phone open http://HOST/root.crt, download, then Android Settings → Security & privacy → More security settings → Encryption & credentials → Install a certificate → CA certificate → pick root.crt. Then open https://HOST and log in; magic-link emails at http://HOST:54324 (Mailpit).
 
 ## Commands
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Native dev server http://localhost:5173 (Playwright/CI only; use `./up` otherwise) |
-| `npm run build` / `npm run preview` | Production build / serve |
-| `npm run lint` / `npm run typecheck` | oxlint / tsc |
-| `npm test` | Vitest unit tests |
-| `npm run test:e2e` | Playwright (mobile viewport, mocked Geolocation) |
-| `npx supabase test db` | pgTAP RLS/trigger tests |
-| `npx supabase gen types typescript --local > src/lib/database.types.ts` | Regenerate DB types |
-| `npx supabase db push` | Apply migrations |
+
+| Command                                                                 | Purpose                                                                            |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev`                                                           | Native dev server http://localhost:5173 (Playwright/CI only; use `./up` otherwise) |
+| `npm run build` / `npm run preview`                                     | Production build / serve                                                           |
+| `npm run lint` / `npm run typecheck`                                    | oxlint / tsc                                                                       |
+| `npm test`                                                              | Vitest unit tests                                                                  |
+| `npm run test:e2e`                                                      | Playwright (mobile viewport, mocked Geolocation)                                   |
+| `npx supabase test db`                                                  | pgTAP RLS/trigger tests                                                            |
+| `npx supabase gen types typescript --local > src/lib/database.types.ts` | Regenerate DB types                                                                |
+| `npx supabase db push`                                                  | Apply migrations                                                                   |
 
 ## Run with Docker
+
 ```sh
 ./up      # Supabase + Caddy + Vite + nginx web, live logs, Ctrl-C stops all → https://HOST, http://HOST:8080
 ./down
 ```
+
 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY come from `.env` as build args.
 
 ## Offline
+
 Points and routes are written to a local IndexedDB (Dexie) outbox and synced to Supabase in FIFO order on reconnect (drain also runs every 30 s, on tab focus, and after each enqueue while online). Failed items retry 5 times then appear under the sync badge for retry/discard. Map tiles for an adventure's bounds can be prefetched (Settings → Offline maps): OpenStreetMap capped at 2500 tiles per adventure (OSM tile-usage policy — bulk downloads must be modest), Esri imagery at 8000, zooms 12–16.
 
 ## Deploy
+
 Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `main`) → Supabase cloud (DB/Auth/Realtime, migrations pushed from your machine). All free tier.
 
 ### First-time setup
 
 #### 1. GitHub
+
 1. Sign up at github.com. Install [`gh`](https://cli.github.com/) and run `gh auth login`.
 2. Repo: https://github.com/GDBryant/route_points. Push:
    ```sh
@@ -74,6 +83,7 @@ Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `m
 3. Check **Actions** tab: `CI` runs lint/typecheck/unit tests/build and pgTAP + Playwright against a throwaway local Supabase — no secrets needed.
 
 #### 2. Supabase cloud
+
 1. Sign up at supabase.com (GitHub login works). **New project**: name `route-points`, strong DB password (save it in a password manager, needed for `supabase link`), region nearest your users. Wait ~2 min for provisioning.
 2. Note the **Project ref** (Settings → General) — the `xxxx` in `https://xxxx.supabase.co`. Put it in `scripts/deploy-db.sh` (`SUPABASE_PROJECT_REF=`).
 3. Push schema from your machine:
@@ -96,6 +106,7 @@ Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `m
 9. **Paused project** (free tier, idle ~7 days): dashboard → project → **Restore/Resume**. Postgres takes a few minutes to accept connections after resume (`supabase migration list --linked` fails with `ECONNREFUSED` until then). Then `npx supabase migration list --linked` and `npx supabase db push --linked` for any unapplied migrations.
 
 #### 3. Cloudflare Pages
+
 1. Sign up at dash.cloudflare.com (no domain required).
 2. **Workers & Pages → Create → Pages → Connect to Git** → authorize the Cloudflare GitHub app for the `route_points` repo. Use **Pages**, not Workers: a Worker custom domain requires the DNS zone on Cloudflare; Pages custom domains work with external DNS via CNAME.
 3. Build settings:
@@ -111,12 +122,15 @@ Target: GitHub (source + CI) → Cloudflare Pages (frontend, auto-deploy from `m
 Netlify fallback: New site → Import from Git → same env vars; `netlify.toml` already defines build/redirects/headers.
 
 #### 4. GitHub secrets (keepalive)
+
 Repo → **Settings → Secrets and variables → Actions**: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (cloud values). `.github/workflows/keepalive.yml` pings `/rest/v1/adventures?limit=1` every Monday (the `/rest/v1/` root needs the service-role key) so the free project isn't paused; trigger it once manually via Actions → Supabase keepalive → Run workflow to confirm it passes.
 
 #### 5. Docker (self-host alternative)
+
 `docker compose up --build` → http://localhost:8080 (nginx serving `dist`, Supabase URL/key baked in from `.env` at build time). Put it behind HTTPS (Caddy/Traefik) — Geolocation and service workers require a secure origin.
 
 ### Each deployment cycle
+
 1. **Branch**: `git switch -c feat/x`. Work locally against `npx supabase start`; `npm run lint && npm run typecheck && npm test`.
 2. **Schema change?**
    ```sh
@@ -133,10 +147,12 @@ Repo → **Settings → Secrets and variables → Actions**: add `SUPABASE_URL` 
 7. **Rollback**: Cloudflare Pages → Deployments → previous deployment → **Rollback** (instant). DB rollbacks are a new forward migration — never edit an applied migration file.
 
 ### Free tier limits & costs
+
 - Supabase free: 500 MB DB, 200 realtime connections, 2M messages/mo; project **pauses after ~7 days idle** → `.github/workflows/keepalive.yml` pings weekly (set `SUPABASE_URL`/`SUPABASE_ANON_KEY` secrets).
 - Cloudflare Pages free: unlimited bandwidth, 500 builds/mo.
 
 ## Layout
+
 ```
 src/features/{auth,adventures,points,routes,map,tracking,sync}
 supabase/migrations/      SQL migrations + RLS
@@ -146,6 +162,7 @@ docs/ai_docs/             plan, decisions, progress
 ```
 
 ## Docs
+
 - `docs/ai_docs/plan.md` — full plan, data model, milestones
 - `docs/ai_docs/decisions.md` — decision log
 - `docs/ai_docs/progress.md` — milestone status

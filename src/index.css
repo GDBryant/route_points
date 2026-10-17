@@ -222,9 +222,8 @@ input {
 }
 
 .pm-flag {
-  font-size: 22px;
-  line-height: 22px;
-  text-shadow: 0 0 2px #fff;
+  flex: none;
+  filter: drop-shadow(0 0 1px #fff);
 }
 
 .pm-label {

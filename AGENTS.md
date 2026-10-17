@@ -3,11 +3,13 @@
 Mobile-first PWA for logging named location points and GPS routes between them during off-road "adventures" (e.g. dune obstacle courses). Multi-user live positions.
 
 ## Rules
+
 - HARD RULE: Be very brief in all aspects — replies, commit messages, docs, code. Result, reason, next step. No preamble, filler or recaps.
 - HARD RULE: No code comments unless asked. Compact code, no over-engineering.
 - Read `docs/ai_docs/` before working. Update `docs/ai_docs/decisions.md` when a design choice is made; `docs/ai_docs/progress.md` when a milestone lands.
 
 ## Stack
+
 - Vite + React + TypeScript, `vite-plugin-pwa`
 - Leaflet + OpenStreetMap (`react-leaflet`)
 - Supabase: Auth, Postgres + PostGIS, Realtime
@@ -15,6 +17,7 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - Hosting: Cloudflare Pages (auto-deploy from `main`, https://rpa.roamingsolutions.net) + Supabase cloud (ref `neegnbmdioqfgatneits`)
 
 ## Commands
+
 - `npm run dev` / `npm run build` / `npm run preview`
 - `npm run lint` (oxlint) / `npm run typecheck` / `npm test` / `npm run format`
 - `npm run test:e2e` (Playwright; `npx playwright install chromium` first)
@@ -23,6 +26,7 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - Node 24 (`.nvmrc`). `npm install` may need `--legacy-peer-deps` (npm arborist bug with vitest peers)
 
 ## Layout
+
 - `src/` app, `src/features/{auth,adventures,points,routes,map,tracking,sync}`
 - `supabase/` migrations, RLS policies
 - `docs/ai_docs/` plan, decisions, progress
