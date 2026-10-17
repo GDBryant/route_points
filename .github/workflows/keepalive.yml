@@ -8,5 +8,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -sf "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+          curl -sf "${{ secrets.SUPABASE_URL }}/rest/v1/adventures?limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" > /dev/null
