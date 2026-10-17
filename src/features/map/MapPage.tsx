@@ -419,6 +419,7 @@ export default function MapPage() {
                 });
               setTab("map");
             }}
+            onDelete={isEditor ? onRouteDelete : undefined}
           />
         </div>
       )}
