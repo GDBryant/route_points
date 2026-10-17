@@ -162,6 +162,23 @@ input {
   background: #fff;
 }
 
+.legal {
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+.legal h2 {
+  font-size: 16px;
+  margin: 20px 0 6px;
+}
+.legal ul {
+  padding-left: 20px;
+}
+.legal-links {
+  margin-top: 24px;
+  text-align: center;
+}
+
 .tab.exit {
   flex: 0 0 48px;
   font-size: 20px;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -50,6 +50,9 @@ export default function LoginPage() {
           {error && <p className="error">{error}</p>}
         </form>
       )}
+      <p className="muted legal-links">
+        <Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link>
+      </p>
     </div>
   )
 }
