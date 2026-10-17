@@ -28,6 +28,7 @@ export default function LoginPage() {
 
   return (
     <div className="page">
+      <img src="/logo.svg" alt="" width="96" height="96" style={{ borderRadius: 20 }} />
       <h1>Route Points</h1>
       {sent ? (
         <p>Check your email for the sign-in link.</p>
