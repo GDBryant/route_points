@@ -689,3 +689,12 @@ select {
   padding: 8px;
   width: 100%;
 }
+
+button.signout {
+  display: block;
+  margin: 24px auto 0;
+  background: none;
+  border: none;
+  color: #777;
+  text-decoration: underline;
+}

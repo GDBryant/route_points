@@ -8,6 +8,7 @@ import {
 } from "./api";
 import ShareSheet from "./ShareSheet";
 import InstallHint from "@/features/pwa/InstallHint";
+import { useAuth } from "@/features/auth/useAuth";
 
 export default function AdventuresPage() {
   const [adventures, setAdventures] = useState<Adventure[]>([]);
@@ -16,6 +17,7 @@ export default function AdventuresPage() {
   const [share, setShare] = useState<Adventure | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     listAdventures()
@@ -94,6 +96,12 @@ export default function AdventuresPage() {
       <div style={{ marginTop: 16 }}>
         <InstallHint />
       </div>
+      <button
+        className="signout"
+        onClick={() => signOut().then(() => navigate("/", { replace: true }))}
+      >
+        Sign out
+      </button>
     </div>
   );
 }

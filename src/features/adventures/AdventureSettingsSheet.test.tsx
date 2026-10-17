@@ -63,7 +63,7 @@ describe("AdventureSettingsSheet", () => {
         onClose={vi.fn()}
       />,
     );
-    expect(screen.getByText(/v0\.1\.0/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`v${__APP_VERSION__}`))).toBeInTheDocument();
     fireEvent.click(screen.getByText("Check for updates"));
     await screen.findByText("Up to date");
   });
