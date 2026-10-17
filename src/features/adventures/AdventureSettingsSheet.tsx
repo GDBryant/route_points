@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { updateAdventure } from './api'
-import InstallHint from '@/features/pwa/InstallHint'
+import { useState } from "react";
+import { updateAdventure } from "./api";
+import InstallHint from "@/features/pwa/InstallHint";
 
 export default function AdventureSettingsSheet({
   adventure,
@@ -15,28 +15,28 @@ export default function AdventureSettingsSheet({
   onExit,
   onClose,
 }: {
-  adventure: { id: string; name: string; snap_radius_m: number }
-  isOwner: boolean
-  onSaved: (snap: number, name: string) => void
-  onShare?: () => void
-  onOfflineMaps?: () => void
-  sharePos?: boolean
-  onToggleShare?: () => void
-  onExportGpx?: () => void
-  onImportGpx?: () => void
-  onExit: () => void
-  onClose: () => void
+  adventure: { id: string; name: string; snap_radius_m: number };
+  isOwner: boolean;
+  onSaved: (snap: number, name: string) => void;
+  onShare?: () => void;
+  onOfflineMaps?: () => void;
+  sharePos?: boolean;
+  onToggleShare?: () => void;
+  onExportGpx?: () => void;
+  onImportGpx?: () => void;
+  onExit: () => void;
+  onClose: () => void;
 }) {
-  const [name, setName] = useState(adventure.name)
-  const [snap, setSnap] = useState(adventure.snap_radius_m)
+  const [name, setName] = useState(adventure.name);
+  const [snap, setSnap] = useState(adventure.snap_radius_m);
 
   const save = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (isOwner)
-      await updateAdventure(adventure.id, { name, snap_radius_m: snap })
-    onSaved(snap, name)
-    onClose()
-  }
+      await updateAdventure(adventure.id, { name, snap_radius_m: snap });
+    onSaved(snap, name);
+    onClose();
+  };
 
   return (
     <div className="sheet" role="dialog">
@@ -71,7 +71,7 @@ export default function AdventureSettingsSheet({
             Offline maps
           </button>
         )}
-        {typeof onToggleShare === 'function' && (
+        {typeof onToggleShare === "function" && (
           <label className="checkline">
             <input
               type="checkbox"
@@ -100,5 +100,5 @@ export default function AdventureSettingsSheet({
         </button>
       </form>
     </div>
-  )
+  );
 }

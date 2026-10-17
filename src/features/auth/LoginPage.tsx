@@ -1,34 +1,40 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [params] = useSearchParams()
-  const next = params.get('next') ?? '/adventures'
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  const next = params.get("next") ?? "/adventures";
 
   const sendMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${location.origin}${next}` },
-    })
-    if (error) setError(error.message)
-    else setSent(true)
-  }
+    });
+    if (error) setError(error.message);
+    else setSent(true);
+  };
 
   const signInGoogle = () =>
     supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: { redirectTo: `${location.origin}${next}` },
-    })
+    });
 
   return (
     <div className="page">
-      <img src="/logo.svg" alt="" width="96" height="96" style={{ borderRadius: 20 }} />
+      <img
+        src="/logo.svg"
+        alt=""
+        width="96"
+        height="96"
+        style={{ borderRadius: 20 }}
+      />
       <h1>Route Points</h1>
       {sent ? (
         <p>Check your email for the sign-in link.</p>
@@ -54,5 +60,5 @@ export default function LoginPage() {
         <Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link>
       </p>
     </div>
-  )
+  );
 }

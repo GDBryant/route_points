@@ -1,28 +1,28 @@
-import { shareUrl } from './api'
+import { shareUrl } from "./api";
 
 export default function ShareSheet({
   token,
   name,
   onClose,
 }: {
-  token: string
-  name: string
-  onClose: () => void
+  token: string;
+  name: string;
+  onClose: () => void;
 }) {
-  const url = shareUrl(token)
-  const text = `Join my adventure "${name}" on Route Points`
+  const url = shareUrl(token);
+  const text = `Join my adventure "${name}" on Route Points`;
 
-  const canShare = typeof navigator.share === 'function'
+  const canShare = typeof navigator.share === "function";
 
   const share = async () => {
-    await navigator.share({ title: name, text, url }).catch(() => {})
-    onClose()
-  }
+    await navigator.share({ title: name, text, url }).catch(() => {});
+    onClose();
+  };
 
   const copy = async () => {
-    await navigator.clipboard.writeText(`${text} ${url}`)
-    onClose()
-  }
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    onClose();
+  };
 
   return (
     <div className="sheet" role="dialog">
@@ -45,5 +45,5 @@ export default function ShareSheet({
         <button onClick={onClose}>Cancel</button>
       </div>
     </div>
-  )
+  );
 }

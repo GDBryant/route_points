@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import type { RouteRow } from './api'
-import type { Point } from '@/features/points/api'
-import { routeLengthM } from './routeUtils'
+import { useState } from "react";
+import type { RouteRow } from "./api";
+import type { Point } from "@/features/points/api";
+import { routeLengthM } from "./routeUtils";
 
 export type RoutePatch = Pick<
   RouteRow,
-  'name' | 'from_point_id' | 'to_point_id' | 'direction'
->
+  "name" | "from_point_id" | "to_point_id" | "direction"
+>;
 
 export default function RouteDetailSheet({
   route,
@@ -16,36 +16,36 @@ export default function RouteDetailSheet({
   onDelete,
   onClose,
 }: {
-  route: RouteRow
-  points: Point[]
-  isEditor: boolean
-  onUpdate: (r: RouteRow, patch: RoutePatch) => void
-  onDelete: (r: RouteRow) => void
-  onClose: () => void
+  route: RouteRow;
+  points: Point[];
+  isEditor: boolean;
+  onUpdate: (r: RouteRow, patch: RoutePatch) => void;
+  onDelete: (r: RouteRow) => void;
+  onClose: () => void;
 }) {
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(route.name)
-  const [fromId, setFromId] = useState(route.from_point_id ?? '')
-  const [toId, setToId] = useState(route.to_point_id ?? '')
-  const [direction, setDirection] = useState(route.direction)
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(route.name);
+  const [fromId, setFromId] = useState(route.from_point_id ?? "");
+  const [toId, setToId] = useState(route.to_point_id ?? "");
+  const [direction, setDirection] = useState(route.direction);
 
   const pointName = (id: string | null) =>
-    id ? (points.find((p) => p.id === id)?.name ?? '?') : '—'
+    id ? (points.find((p) => p.id === id)?.name ?? "?") : "—";
 
   const seg = (dir: string, set: (d: string) => void) => (
     <div className="segmented">
-      {['both', 'forward', 'reverse'].map((d) => (
+      {["both", "forward", "reverse"].map((d) => (
         <button
           key={d}
           type="button"
-          className={dir === d ? 'seg active' : 'seg'}
+          className={dir === d ? "seg active" : "seg"}
           onClick={() => set(d)}
         >
           {d}
         </button>
       ))}
     </div>
-  )
+  );
 
   if (editing) {
     return (
@@ -89,8 +89,8 @@ export default function RouteDetailSheet({
                 from_point_id: fromId || null,
                 to_point_id: toId || null,
                 direction,
-              })
-              setEditing(false)
+              });
+              setEditing(false);
             }}
           >
             Save
@@ -98,16 +98,16 @@ export default function RouteDetailSheet({
           <button onClick={() => setEditing(false)}>Cancel</button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="sheet" role="dialog">
-      <h3>{route.name || 'Route'}</h3>
+      <h3>{route.name || "Route"}</h3>
       <p className="muted">
-        {pointName(route.from_point_id)} → {pointName(route.to_point_id)} ·{' '}
-        {Math.round(routeLengthM(route.coords))} m ·{' '}
-        {route.coords.length} waypoints
+        {pointName(route.from_point_id)} → {pointName(route.to_point_id)} ·{" "}
+        {Math.round(routeLengthM(route.coords))} m · {route.coords.length}{" "}
+        waypoints
       </p>
       {isEditor &&
         seg(route.direction, (d) =>
@@ -122,11 +122,11 @@ export default function RouteDetailSheet({
         {isEditor && (
           <button
             onClick={() => {
-              setName(route.name)
-              setFromId(route.from_point_id ?? '')
-              setToId(route.to_point_id ?? '')
-              setDirection(route.direction)
-              setEditing(true)
+              setName(route.name);
+              setFromId(route.from_point_id ?? "");
+              setToId(route.to_point_id ?? "");
+              setDirection(route.direction);
+              setEditing(true);
             }}
           >
             Edit
@@ -136,7 +136,7 @@ export default function RouteDetailSheet({
           <button
             className="danger"
             onClick={() => {
-              if (confirm(`Delete ${route.name || 'route'}?`)) onDelete(route)
+              if (confirm(`Delete ${route.name || "route"}?`)) onDelete(route);
             }}
           >
             Delete
@@ -145,5 +145,5 @@ export default function RouteDetailSheet({
         <button onClick={onClose}>Close</button>
       </div>
     </div>
-  )
+  );
 }

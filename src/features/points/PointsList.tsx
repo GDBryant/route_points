@@ -1,4 +1,4 @@
-import type { Point } from './api'
+import type { Point } from "./api";
 
 export default function PointsList({
   points,
@@ -6,14 +6,14 @@ export default function PointsList({
   onTap,
   onMove,
 }: {
-  points: Point[]
-  isEditor?: boolean
-  onTap: (p: Point) => void
-  onMove?: (p: Point, dir: -1 | 1) => void
+  points: Point[];
+  isEditor?: boolean;
+  onTap: (p: Point) => void;
+  onMove?: (p: Point, dir: -1 | 1) => void;
 }) {
   const sorted = [...points].sort(
     (a, b) => (a.seq ?? 9999) - (b.seq ?? 9999) || a.name.localeCompare(b.name),
-  )
+  );
   return (
     <ul className="list">
       {sorted.map((p, i) => (
@@ -45,5 +45,5 @@ export default function PointsList({
       ))}
       {sorted.length === 0 && <p className="muted">No points yet</p>}
     </ul>
-  )
+  );
 }

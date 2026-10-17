@@ -1,6 +1,6 @@
-import type { Point } from './api'
-import type { GeoPosition } from '@/features/tracking/useGeolocation'
-import { bearingDeg, haversineM } from '@/lib/geo'
+import type { Point } from "./api";
+import type { GeoPosition } from "@/features/tracking/useGeolocation";
+import { bearingDeg, haversineM } from "@/lib/geo";
 
 export default function PointDetailSheet({
   point,
@@ -12,21 +12,19 @@ export default function PointDetailSheet({
   onMove,
   onClose,
 }: {
-  point: Point
-  position: GeoPosition | null
-  isEditor: boolean
-  onEdit: (p: Point) => void
-  onDelete: (p: Point) => void
-  onNavigate?: (p: Point) => void
-  onMove?: (p: Point) => void
-  onClose: () => void
+  point: Point;
+  position: GeoPosition | null;
+  isEditor: boolean;
+  onEdit: (p: Point) => void;
+  onDelete: (p: Point) => void;
+  onNavigate?: (p: Point) => void;
+  onMove?: (p: Point) => void;
+  onClose: () => void;
 }) {
   const dist =
-    position &&
-    haversineM(position, { lat: point.lat, lng: point.lng })
+    position && haversineM(position, { lat: point.lat, lng: point.lng });
   const bearing =
-    position &&
-    bearingDeg(position, { lat: point.lat, lng: point.lng })
+    position && bearingDeg(position, { lat: point.lat, lng: point.lng });
 
   return (
     <div className="sheet" role="dialog">
@@ -50,7 +48,7 @@ export default function PointDetailSheet({
             <button
               className="danger"
               onClick={() => {
-                if (confirm(`Delete ${point.name}?`)) onDelete(point)
+                if (confirm(`Delete ${point.name}?`)) onDelete(point);
               }}
             >
               Delete
@@ -60,5 +58,5 @@ export default function PointDetailSheet({
         <button onClick={onClose}>Close</button>
       </div>
     </div>
-  )
+  );
 }

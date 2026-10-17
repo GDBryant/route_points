@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/lib/db'
-import { MAX_ATTEMPTS } from './outbox'
+import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+import { MAX_ATTEMPTS } from "./outbox";
 
 export default function SyncBadge({
   online,
@@ -10,31 +10,31 @@ export default function SyncBadge({
   syncing,
   onSync,
 }: {
-  online: boolean
-  pending: number
-  dead: number
-  syncing: boolean
-  onSync: () => void
+  online: boolean;
+  pending: number;
+  dead: number;
+  syncing: boolean;
+  onSync: () => void;
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   const deadItems = useLiveQuery(
     () =>
       open
-        ? db.outbox.where('attempts').aboveOrEqual(MAX_ATTEMPTS).toArray()
+        ? db.outbox.where("attempts").aboveOrEqual(MAX_ATTEMPTS).toArray()
         : [],
     [open],
     [],
-  )
+  );
 
   return (
     <>
       <button
-        className={`sync-badge${online ? '' : ' offline'}`}
+        className={`sync-badge${online ? "" : " offline"}`}
         onClick={() => (dead ? setOpen(true) : onSync())}
       >
-        {online ? '☁' : '⚠'}
+        {online ? "☁" : "⚠"}
         {pending + dead > 0 && <span className="count">{pending + dead}</span>}
-        {syncing && '…'}
+        {syncing && "…"}
       </button>
       {open && (
         <div className="sheet" role="dialog">
@@ -48,8 +48,8 @@ export default function SyncBadge({
                 </span>
                 <button
                   onClick={async () => {
-                    await db.outbox.update(i.id!, { attempts: 0 })
-                    onSync()
+                    await db.outbox.update(i.id!, { attempts: 0 });
+                    onSync();
                   }}
                 >
                   Retry
@@ -67,5 +67,5 @@ export default function SyncBadge({
         </div>
       )}
     </>
-  )
+  );
 }

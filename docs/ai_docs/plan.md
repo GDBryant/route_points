@@ -1,9 +1,11 @@
 # Route Points — Plan
 
 ## Goal
+
 Mobile PWA. Logged-in user creates an **adventure**, logs named **points** (obstacles, tent, entrance) and records **routes** (sequences of GPS way-points) between points. Map shows own live position, other participants, all points and routes. Works offline in dunes; syncs when signal returns.
 
 ## Decisions (confirmed)
+
 - Map: Leaflet + OpenStreetMap via react-leaflet
 - Stack: Vite + React + TS, vite-plugin-pwa; Supabase (Auth, Postgres+PostGIS, Realtime)
 - Offline-first PWA; screen-on tracking with Wake Lock API (no background GPS)
@@ -17,6 +19,7 @@ Mobile PWA. Logged-in user creates an **adventure**, logs named **points** (obst
 - Full test coverage required (unit + integration + e2e)
 
 ## Data model
+
 ```
 profiles        id (auth.users), display_name, colour
 adventures      id, owner_id, name, description, created_at, is_active, share_token (uuid), snap_radius_m (default 20)
@@ -26,9 +29,11 @@ routes          id, adventure_id, name, from_point_id?, to_point_id?, direction 
 waypoints       id, route_id, seq, geog point, accuracy_m, recorded_at, client_id
 positions       user_id, adventure_id, geog point, heading, speed, updated_at  (upsert, Realtime broadcast)
 ```
+
 RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonymous read via share_token through a SECURITY DEFINER RPC; owner deletes adventure.
 
 ## Features
+
 1. Auth: email magic-link + Google (Supabase)
 2. Adventures: Start New Adventure; list sorted by last-opened (latest pre-selected on login); Share → WhatsApp share sheet (Web Share API) / copy link `/join/:share_token`; opening link as guest = viewer mode, after login adventure is added to list
 3. Map screen (primary): base layer toggle OSM | Esri World Imagery; own position (heading arrow), other members (coloured dots, name), points (flag markers w/ labels like the Garmin printout), routes (polylines, arrowheads when directional), follow-me toggle, north-up/heading-up, zoom-to-adventure
@@ -45,6 +50,7 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 10. Viewer mode: read-only map + navigation (distance/bearing to selected point) for 100–200 users on share link, no login
 
 ## Screens
+
 - `/login`
 - `/adventures` list + create/join
 - `/a/:id` map (default) with bottom sheet: Points | Routes | Members
@@ -52,12 +58,14 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 - `/settings` profile, colour, units
 
 ## Testing
+
 - Unit: Vitest + React Testing Library (slider log-scale, snap logic, outbox sync, GPX, geo utils)
 - Integration: Supabase local (`supabase start`) + pgTAP for RLS policies and editor-limit trigger
 - E2E: Playwright mobile viewport; mock Geolocation; flows: login, create adventure, add point, record route (manual+auto), snap, share link → viewer, offline → sync
 - CI: GitHub Actions runs lint, typecheck, unit, pgTAP, Playwright on PR
 
 ## Milestones
+
 - M0 Scaffold: Vite+React+TS, PWA plugin, Supabase client, Leaflet map showing GPS position
 - M1 Auth + adventures CRUD + share link/join + roles + RLS migrations (pgTAP)
 - M2 Points: add via GPS / long-press, render flags with labels
@@ -67,9 +75,11 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 - M6 GPX export/import, polish, install prompt, deploy
 
 ## Risks
+
 - iOS Safari: Wake Lock supported ≥16.4; GPS stops when backgrounded → warn user to keep screen on
 - OSM tile usage policy: bulk prefetch must be modest (limit zoom/bbox) or use a tile proxy/own tiles later
 - GPS accuracy in dunes: store `accuracy_m`, filter waypoints with accuracy > 50 m
 
 ## Open questions
+
 - None outstanding. Confirm Esri tile ToS acceptable for offline caching before M4.

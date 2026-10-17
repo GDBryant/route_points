@@ -1,5 +1,10 @@
-import { useState } from 'react'
-import { formatInterval, secondsToT, SNAP_SECONDS, tToSeconds } from './interval'
+import { useState } from "react";
+import {
+  formatInterval,
+  secondsToT,
+  SNAP_SECONDS,
+  tToSeconds,
+} from "./interval";
 
 export default function RecordSheet({
   state,
@@ -10,33 +15,33 @@ export default function RecordSheet({
   onDrop,
   onStop,
 }: {
-  state: 'idle' | 'recording' | 'finishing'
-  mode?: 'manual' | 'auto' | null
-  waypointCount: number
-  elapsedS: number
-  onStart: (mode: 'manual' | 'auto', intervalS: number | null) => void
-  onDrop: () => void
-  onStop: () => void
+  state: "idle" | "recording" | "finishing";
+  mode?: "manual" | "auto" | null;
+  waypointCount: number;
+  elapsedS: number;
+  onStart: (mode: "manual" | "auto", intervalS: number | null) => void;
+  onDrop: () => void;
+  onStop: () => void;
 }) {
-  const [mode, setMode] = useState<'manual' | 'auto'>('manual')
-  const [t, setT] = useState(() => secondsToT(30))
-  const secs = tToSeconds(t)
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [t, setT] = useState(() => secondsToT(30));
+  const secs = tToSeconds(t);
 
-  if (state === 'idle') {
+  if (state === "idle") {
     return (
       <div className="sheet" role="dialog">
         <div className="segmented">
-          {(['manual', 'auto'] as const).map((m) => (
+          {(["manual", "auto"] as const).map((m) => (
             <button
               key={m}
-              className={mode === m ? 'seg active' : 'seg'}
+              className={mode === m ? "seg active" : "seg"}
               onClick={() => setMode(m)}
             >
               {m[0].toUpperCase() + m.slice(1)}
             </button>
           ))}
         </div>
-        {mode === 'auto' && (
+        {mode === "auto" && (
           <div className="slider-wrap">
             <input
               type="range"
@@ -63,7 +68,7 @@ export default function RecordSheet({
         <div className="stack">
           <button
             className="primary big"
-            onClick={() => onStart(mode, mode === 'auto' ? secs : null)}
+            onClick={() => onStart(mode, mode === "auto" ? secs : null)}
           >
             Start route
           </button>
@@ -72,7 +77,7 @@ export default function RecordSheet({
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -82,7 +87,7 @@ export default function RecordSheet({
         <span>{waypointCount} waypoints</span>
       </div>
       <div className="stack">
-        {state === 'recording' && recMode !== 'auto' && (
+        {state === "recording" && recMode !== "auto" && (
           <button className="primary big" onClick={onDrop}>
             Drop waypoint
           </button>
@@ -92,5 +97,5 @@ export default function RecordSheet({
         </button>
       </div>
     </div>
-  )
+  );
 }

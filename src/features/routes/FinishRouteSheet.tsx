@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import type { Point } from '@/features/points/api'
-import type { GeoPosition } from '@/features/tracking/useGeolocation'
-import { haversineM } from '@/lib/geo'
-import { nearestPoint } from './snap'
-import type { PendingRoute } from './useRecorder'
+import { useState } from "react";
+import type { Point } from "@/features/points/api";
+import type { GeoPosition } from "@/features/tracking/useGeolocation";
+import { haversineM } from "@/lib/geo";
+import { nearestPoint } from "./snap";
+import type { PendingRoute } from "./useRecorder";
 
 export interface FinishInput {
-  name: string
-  from_point_id: string | null
-  to_point_id: string | null
-  direction: string
+  name: string;
+  from_point_id: string | null;
+  to_point_id: string | null;
+  direction: string;
 }
 
 export default function FinishRouteSheet({
@@ -22,32 +22,30 @@ export default function FinishRouteSheet({
   onSave,
   onNewPoint,
 }: {
-  route: PendingRoute
-  lastPos: GeoPosition | null
-  points: Point[]
-  snapRadiusM: number
-  routeCount: number
-  forceToId?: string
-  onSave: (input: FinishInput) => void
-  onNewPoint?: () => void
+  route: PendingRoute;
+  lastPos: GeoPosition | null;
+  points: Point[];
+  snapRadiusM: number;
+  routeCount: number;
+  forceToId?: string;
+  onSave: (input: FinishInput) => void;
+  onNewPoint?: () => void;
 }) {
   const suggested = forceToId
     ? (points.find((p) => p.id === forceToId) ?? null)
-    : nearestPoint(lastPos, points, snapRadiusM)
-  const fromPoint = points.find((p) => p.id === route.from_point_id) ?? null
+    : nearestPoint(lastPos, points, snapRadiusM);
+  const fromPoint = points.find((p) => p.id === route.from_point_id) ?? null;
   const [name, setName] = useState(() =>
     fromPoint && suggested
       ? `${fromPoint.name} → ${suggested.name}`
       : `Route ${routeCount + 1}`,
-  )
-  const [fromId, setFromId] = useState(route.from_point_id ?? '')
-  const [toId, setToId] = useState(suggested?.id ?? '')
-  const [direction, setDirection] = useState('both')
+  );
+  const [fromId, setFromId] = useState(route.from_point_id ?? "");
+  const [toId, setToId] = useState(suggested?.id ?? "");
+  const [direction, setDirection] = useState("both");
 
   const dist =
-    suggested && lastPos
-      ? Math.round(haversineM(lastPos, suggested))
-      : null
+    suggested && lastPos ? Math.round(haversineM(lastPos, suggested)) : null;
 
   return (
     <div className="sheet" role="dialog">
@@ -87,11 +85,11 @@ export default function FinishRouteSheet({
           </button>
         )}
         <div className="segmented">
-          {['both', 'forward', 'reverse'].map((d) => (
+          {["both", "forward", "reverse"].map((d) => (
             <button
               key={d}
               type="button"
-              className={direction === d ? 'seg active' : 'seg'}
+              className={direction === d ? "seg active" : "seg"}
               onClick={() => setDirection(d)}
             >
               {d}
@@ -113,5 +111,5 @@ export default function FinishRouteSheet({
         </button>
       </div>
     </div>
-  )
+  );
 }

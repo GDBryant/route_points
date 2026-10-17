@@ -1,63 +1,63 @@
-import Dexie, { type Table } from 'dexie'
-import type { Point } from '@/features/points/api'
-import type { RouteRow } from '@/features/routes/api'
+import Dexie, { type Table } from "dexie";
+import type { Point } from "@/features/points/api";
+import type { RouteRow } from "@/features/routes/api";
 
 export interface AdventureRow {
-  id: string
-  name: string
-  snap_radius_m: number
-  share_token: string
-  role: string
-  last_opened_at: string
+  id: string;
+  name: string;
+  snap_radius_m: number;
+  share_token: string;
+  role: string;
+  last_opened_at: string;
 }
 
 export type OutboxKind =
-  | 'upsert_point'
-  | 'delete_point'
-  | 'upsert_route'
-  | 'add_waypoints'
-  | 'delete_route'
-  | 'upsert_position'
+  | "upsert_point"
+  | "delete_point"
+  | "upsert_route"
+  | "add_waypoints"
+  | "delete_route"
+  | "upsert_position";
 
 export interface OutboxItem {
-  id?: number
-  kind: OutboxKind
-  payload: unknown
-  created_at: string
-  attempts: number
-  last_error: string | null
+  id?: number;
+  kind: OutboxKind;
+  payload: unknown;
+  created_at: string;
+  attempts: number;
+  last_error: string | null;
 }
 
 export interface TileMeta {
-  adventure_id: string
-  layer: string
-  bbox: [number, number, number, number]
-  zooms: [number, number]
-  count: number
-  bytes: number
-  downloaded_at: string
+  adventure_id: string;
+  layer: string;
+  bbox: [number, number, number, number];
+  zooms: [number, number];
+  count: number;
+  bytes: number;
+  downloaded_at: string;
 }
 
 export class RoutePointsDB extends Dexie {
-  adventures!: Table<AdventureRow, string>
-  points!: Table<Point & { adventure_id: string }, string>
-  routes!: Table<RouteRow, string>
-  outbox!: Table<OutboxItem, number>
-  tiles_meta!: Table<TileMeta, [string, string]>
+  adventures!: Table<AdventureRow, string>;
+  points!: Table<Point & { adventure_id: string }, string>;
+  routes!: Table<RouteRow, string>;
+  outbox!: Table<OutboxItem, number>;
+  tiles_meta!: Table<TileMeta, [string, string]>;
 
-  constructor(name = 'route_points') {
-    super(name)
+  constructor(name = "route_points") {
+    super(name);
     this.version(1).stores({
-      adventures: 'id',
-      points: 'id, client_id, adventure_id',
-      routes: 'id, client_id, adventure_id',
-      outbox: '++id, created_at, attempts, kind',
-      tiles_meta: '[adventure_id+layer]',
-    })
+      adventures: "id",
+      points: "id, client_id, adventure_id",
+      routes: "id, client_id, adventure_id",
+      outbox: "++id, created_at, attempts, kind",
+      tiles_meta: "[adventure_id+layer]",
+    });
     this.version(2).stores({
-      outbox: '++id, created_at, attempts, kind',
-    })
+      outbox: "++id, created_at, attempts, kind",
+    });
   }
 }
 
-export const db = new RoutePointsDB()
+export const db = new RoutePointsDB();

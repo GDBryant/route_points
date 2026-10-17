@@ -1,15 +1,15 @@
-import { Component, type ReactNode } from 'react'
+import { Component, type ReactNode } from "react";
 
 export default class ErrorBoundary extends Component<
   { children: ReactNode },
   { crashed: boolean }
 > {
-  state = { crashed: false }
+  state = { crashed: false };
   static getDerivedStateFromError() {
-    return { crashed: true }
+    return { crashed: true };
   }
   render() {
-    if (!this.state.crashed) return this.props.children
+    if (!this.state.crashed) return this.props.children;
     return (
       <div className="center-page">
         <h2>Something went wrong</h2>
@@ -17,6 +17,6 @@ export default class ErrorBoundary extends Component<
           Reload
         </button>
       </div>
-    )
+    );
   }
 }

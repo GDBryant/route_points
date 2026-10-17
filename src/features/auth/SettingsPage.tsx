@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuth, type Profile } from './useAuth'
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth, type Profile } from "./useAuth";
 
 export default function SettingsPage() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut } = useAuth();
 
   return (
     <div className="page">
@@ -11,25 +11,25 @@ export default function SettingsPage() {
       {profile && <SettingsForm key={profile.id} profile={profile} />}
       <button onClick={signOut}>Sign out</button>
     </div>
-  )
+  );
 }
 
 function SettingsForm({ profile }: { profile: Profile }) {
-  const { refreshProfile } = useAuth()
-  const [displayName, setDisplayName] = useState(profile.display_name)
-  const [colour, setColour] = useState(profile.colour)
-  const [saved, setSaved] = useState(false)
+  const { refreshProfile } = useAuth();
+  const [displayName, setDisplayName] = useState(profile.display_name);
+  const [colour, setColour] = useState(profile.colour);
+  const [saved, setSaved] = useState(false);
 
   const save = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     await supabase
-      .from('profiles')
+      .from("profiles")
       .update({ display_name: displayName, colour })
-      .eq('id', profile.id)
-    await refreshProfile()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+      .eq("id", profile.id);
+    await refreshProfile();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
 
   return (
     <form onSubmit={save} className="stack">
@@ -49,8 +49,8 @@ function SettingsForm({ profile }: { profile: Profile }) {
         />
       </label>
       <button type="submit" className="primary">
-        {saved ? 'Saved' : 'Save'}
+        {saved ? "Saved" : "Save"}
       </button>
     </form>
-  )
+  );
 }

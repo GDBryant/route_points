@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom/vitest'
-import 'fake-indexeddb/auto'
+import "@testing-library/jest-dom/vitest";
+import "fake-indexeddb/auto";
 
 window.matchMedia ??= (query: string) =>
   ({
@@ -11,4 +11,4 @@ window.matchMedia ??= (query: string) =>
     removeListener: () => {},
     onchange: null,
     dispatchEvent: () => false,
-  }) as MediaQueryList
+  }) as MediaQueryList;

@@ -1,29 +1,29 @@
-import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { usePositions } from './usePositions'
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { usePositions } from "./usePositions";
 
-type Handler = (...args: unknown[]) => void
-const handlers: Record<string, Handler> = {}
-const send = vi.fn()
-const track = vi.fn()
-const subscribeCb = { fn: (_s: string) => {} }
+type Handler = (...args: unknown[]) => void;
+const handlers: Record<string, Handler> = {};
+const send = vi.fn();
+const track = vi.fn();
+const subscribeCb = { fn: (_s: string) => {} };
 const channel = {
   on: vi.fn((_t: string, f: unknown, cb: Handler) => {
-    const ev = (f as { event: string }).event
-    handlers[ev] = cb
-    return channel
+    const ev = (f as { event: string }).event;
+    handlers[ev] = cb;
+    return channel;
   }),
   subscribe: vi.fn((cb: (s: string) => void) => {
-    subscribeCb.fn = cb
-    return channel
+    subscribeCb.fn = cb;
+    return channel;
   }),
   send,
   track,
   presenceState: vi.fn(() => ({})),
-}
-const removeChannel = vi.fn()
+};
+const removeChannel = vi.fn();
 
-vi.mock('@/lib/supabase', () => ({
+vi.mock("@/lib/supabase", () => ({
   supabase: {
     channel: vi.fn(() => channel),
     removeChannel: (...a: unknown[]) => removeChannel(...a),
@@ -32,13 +32,12 @@ vi.mock('@/lib/supabase', () => ({
       select: () => ({ eq: () => ({ data: [], error: null }) }),
     })),
   },
-}))
+}));
 
-vi.mock('@/features/sync/outbox', async (importOriginal) => {
-  const mod =
-    await importOriginal<typeof import('@/features/sync/outbox')>()
-  return { ...mod, enqueuePosition: vi.fn() }
-})
+vi.mock("@/features/sync/outbox", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/features/sync/outbox")>();
+  return { ...mod, enqueuePosition: vi.fn() };
+});
 
 const pos = {
   lat: -33.5,
@@ -46,67 +45,67 @@ const pos = {
   accuracy: 5,
   heading: 90,
   speed: 2,
-}
-const self = { user_id: 'u1', name: 'Alice', colour: '#123' }
+};
+const self = { user_id: "u1", name: "Alice", colour: "#123" };
 
-describe('usePositions', () => {
+describe("usePositions", () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-    send.mockClear()
-    track.mockClear()
-  })
-  afterEach(() => vi.useRealTimers())
+    vi.useFakeTimers();
+    send.mockClear();
+    track.mockClear();
+  });
+  afterEach(() => vi.useRealTimers());
 
-  it('publishes every 5 s when publishing', async () => {
+  it("publishes every 5 s when publishing", async () => {
     renderHook(() =>
       usePositions({
-        adventureId: 'a1',
+        adventureId: "a1",
         publish: true,
         self,
         position: pos,
       }),
-    )
+    );
     await act(async () => {
-      subscribeCb.fn('SUBSCRIBED')
-      await vi.advanceTimersByTimeAsync(11_000)
-    })
-    expect(send).toHaveBeenCalledTimes(2)
-    expect(track).toHaveBeenCalledWith({ user_id: 'u1' })
-  })
+      subscribeCb.fn("SUBSCRIBED");
+      await vi.advanceTimersByTimeAsync(11_000);
+    });
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(track).toHaveBeenCalledWith({ user_id: "u1" });
+  });
 
-  it('does not publish when publish=false', async () => {
+  it("does not publish when publish=false", async () => {
     renderHook(() =>
       usePositions({
-        adventureId: 'a1',
+        adventureId: "a1",
         publish: false,
         self,
         position: pos,
       }),
-    )
+    );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(21_000)
-    })
-    expect(send).not.toHaveBeenCalled()
-  })
+      await vi.advanceTimersByTimeAsync(21_000);
+    });
+    expect(send).not.toHaveBeenCalled();
+  });
 
-  it('applies incoming broadcast to others', async () => {
+  it("applies incoming broadcast to others", async () => {
     const { result } = renderHook(() =>
       usePositions({
-        adventureId: 'a1',
+        adventureId: "a1",
         publish: true,
         self,
         position: null,
       }),
-    )
+    );
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(0)
-    })
+      await vi.advanceTimersByTimeAsync(0);
+    });
     act(() =>
       handlers.pos({
         payload: {
-          user_id: 'u2',
-          name: 'Bob',
-          colour: '#f00',
+          user_id: "u2",
+          name: "Bob",
+          colour: "#f00",
           lat: -33.6,
           lng: 18.5,
           heading: null,
@@ -114,29 +113,29 @@ describe('usePositions', () => {
           accuracy: null,
         },
       }),
-    )
-    expect(result.current.others.get('u2')?.name).toBe('Bob')
-  })
+    );
+    expect(result.current.others.get("u2")?.name).toBe("Bob");
+  });
 
-  it('tracks presence when self arrives after subscribe', async () => {
+  it("tracks presence when self arrives after subscribe", async () => {
     const { rerender } = renderHook(
       ({ s }) =>
         usePositions({
-          adventureId: 'a1',
+          adventureId: "a1",
           publish: true,
           self: s,
           position: null,
         }),
       { initialProps: { s: null as typeof self | null } },
-    )
+    );
     await act(async () => {
-      subscribeCb.fn('SUBSCRIBED')
-    })
-    expect(track).not.toHaveBeenCalled()
-    rerender({ s: self })
+      subscribeCb.fn("SUBSCRIBED");
+    });
+    expect(track).not.toHaveBeenCalled();
+    rerender({ s: self });
     await act(async () => {
-      subscribeCb.fn('SUBSCRIBED')
-    })
-    expect(track).toHaveBeenCalledWith({ user_id: 'u1' })
-  })
-})
+      subscribeCb.fn("SUBSCRIBED");
+    });
+    expect(track).toHaveBeenCalledWith({ user_id: "u1" });
+  });
+});

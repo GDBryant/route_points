@@ -1,35 +1,45 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   createAdventure,
+  deleteAdventure,
   listAdventures,
   type Adventure,
-} from './api'
-import ShareSheet from './ShareSheet'
-import InstallHint from '@/features/pwa/InstallHint'
+} from "./api";
+import ShareSheet from "./ShareSheet";
+import InstallHint from "@/features/pwa/InstallHint";
 
 export default function AdventuresPage() {
-  const [adventures, setAdventures] = useState<Adventure[]>([])
-  const [creating, setCreating] = useState(false)
-  const [name, setName] = useState('')
-  const [share, setShare] = useState<Adventure | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const navigate = useNavigate()
+  const [adventures, setAdventures] = useState<Adventure[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [share, setShare] = useState<Adventure | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     listAdventures()
       .then(setAdventures)
-      .catch((e) => setError(e.message))
-  }, [])
+      .catch((e) => setError(e.message));
+  }, []);
 
   const create = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     const id = await createAdventure(name).catch((err: Error) => {
-      setError(err.message)
-      return null
-    })
-    if (id) navigate(`/a/${id}`)
-  }
+      setError(err.message);
+      return null;
+    });
+    if (id) navigate(`/a/${id}`);
+  };
+
+  const remove = async (a: Adventure) => {
+    if (!confirm(`Delete "${a.name}" and all its points and routes?`)) return;
+    const err = await deleteAdventure(a.id)
+      .then(() => null)
+      .catch((e: Error) => e.message as string);
+    if (err) return setError(err);
+    setAdventures((list) => list.filter((x) => x.id !== a.id));
+  };
 
   return (
     <div className="page">
@@ -37,12 +47,17 @@ export default function AdventuresPage() {
       {error && <p className="error">{error}</p>}
       <ul className="list">
         {adventures.map((a, i) => (
-          <li key={a.id} className={i === 0 ? 'card latest' : 'card'}>
+          <li key={a.id} className={i === 0 ? "card latest" : "card"}>
             <Link to={`/a/${a.id}`}>
               <strong>{a.name}</strong>
               <span className="muted"> · {a.role}</span>
             </Link>
             <button onClick={() => setShare(a)}>Share</button>
+            {a.role === "owner" && (
+              <button className="danger" onClick={() => remove(a)}>
+                Delete
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -80,5 +95,5 @@ export default function AdventuresPage() {
         <InstallHint />
       </div>
     </div>
-  )
+  );
 }
