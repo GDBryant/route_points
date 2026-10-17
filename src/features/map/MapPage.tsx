@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import MapView from './MapView'
 import { useGeolocation } from '@/features/tracking/useGeolocation'
 import {
@@ -47,11 +47,13 @@ type Tab = 'map' | 'points' | 'routes' | 'members'
 
 export default function MapPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const [params] = useSearchParams()
   const { user } = useAuth()
   const { profile } = useAuthCtx()
   const token = params.get('token')
   const guest = !user && !!token
+  const exit = () => navigate(guest ? '/' : '/adventures')
   const { position, error } = useGeolocation()
 
   const [role, setRole] = useState<string | null>(null)
@@ -625,6 +627,7 @@ export default function MapPage() {
             setShowSettings(false)
             setShowTiles(true)
           }}
+          onExit={exit}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -672,6 +675,14 @@ export default function MapPage() {
             {t[0].toUpperCase() + t.slice(1)}
           </button>
         ))}
+        <button
+          className="tab exit"
+          title="Exit adventure"
+          aria-label="Exit adventure"
+          onClick={exit}
+        >
+          ⎋
+        </button>
       </nav>
     </div>
   )

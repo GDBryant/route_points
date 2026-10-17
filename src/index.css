@@ -162,6 +162,11 @@ input {
   background: #fff;
 }
 
+.tab.exit {
+  flex: 0 0 48px;
+  font-size: 20px;
+}
+
 .tab.active {
   color: #1e3a5f;
   font-weight: 600;

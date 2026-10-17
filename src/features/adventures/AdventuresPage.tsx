@@ -6,25 +6,7 @@ import {
   type Adventure,
 } from './api'
 import ShareSheet from './ShareSheet'
-import { useInstallPrompt } from '@/features/pwa/useInstallPrompt'
-
-function InstallHint() {
-  const { canInstall, ios, installed, prompt } = useInstallPrompt()
-  if (installed) return null
-  if (canInstall)
-    return (
-      <button className="primary" style={{ marginTop: 16 }} onClick={prompt}>
-        Install app
-      </button>
-    )
-  if (ios)
-    return (
-      <p className="muted" style={{ marginTop: 16 }}>
-        Share → Add to Home Screen to install
-      </p>
-    )
-  return null
-}
+import InstallHint from '@/features/pwa/InstallHint'
 
 export default function AdventuresPage() {
   const [adventures, setAdventures] = useState<Adventure[]>([])
@@ -94,7 +76,9 @@ export default function AdventuresPage() {
           onClose={() => setShare(null)}
         />
       )}
-      <InstallHint />
+      <div style={{ marginTop: 16 }}>
+        <InstallHint />
+      </div>
     </div>
   )
 }

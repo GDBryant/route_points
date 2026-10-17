@@ -13,6 +13,7 @@ describe('AdventureSettingsSheet', () => {
         isOwner
         onSaved={vi.fn()}
         onShare={onShare}
+        onExit={vi.fn()}
         onClose={vi.fn()}
       />,
     )
@@ -26,9 +27,25 @@ describe('AdventureSettingsSheet', () => {
         adventure={adventure}
         isOwner
         onSaved={vi.fn()}
+        onExit={vi.fn()}
         onClose={vi.fn()}
       />,
     )
     expect(screen.queryByText('Share adventure')).toBeNull()
+  })
+
+  it('Exit adventure calls onExit', () => {
+    const onExit = vi.fn()
+    render(
+      <AdventureSettingsSheet
+        adventure={adventure}
+        isOwner
+        onSaved={vi.fn()}
+        onExit={onExit}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Exit adventure'))
+    expect(onExit).toHaveBeenCalledOnce()
   })
 })

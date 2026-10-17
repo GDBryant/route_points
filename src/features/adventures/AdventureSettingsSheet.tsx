@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { updateAdventure } from './api'
+import InstallHint from '@/features/pwa/InstallHint'
 
 export default function AdventureSettingsSheet({
   adventure,
@@ -11,6 +12,7 @@ export default function AdventureSettingsSheet({
   onToggleShare,
   onExportGpx,
   onImportGpx,
+  onExit,
   onClose,
 }: {
   adventure: { id: string; name: string; snap_radius_m: number }
@@ -22,6 +24,7 @@ export default function AdventureSettingsSheet({
   onToggleShare?: () => void
   onExportGpx?: () => void
   onImportGpx?: () => void
+  onExit: () => void
   onClose: () => void
 }) {
   const [name, setName] = useState(adventure.name)
@@ -88,6 +91,10 @@ export default function AdventureSettingsSheet({
             Import GPX
           </button>
         )}
+        <InstallHint />
+        <button type="button" className="danger" onClick={onExit}>
+          Exit adventure
+        </button>
         <button type="submit" className="primary">
           Done
         </button>
