@@ -47,6 +47,31 @@ describe("RecordSheet", () => {
     expect(onStart).toHaveBeenCalledWith("manual", null);
   });
 
+  it("remembers last mode and interval", () => {
+    localStorage.clear();
+    const onStart = vi.fn();
+    const props = {
+      state: "idle" as const,
+      waypointCount: 0,
+      elapsedS: 0,
+      onDrop: vi.fn(),
+      onStop: vi.fn(),
+    };
+    const { unmount } = render(<RecordSheet {...props} onStart={onStart} />);
+    fireEvent.click(screen.getByText("Auto"));
+    fireEvent.click(screen.getByText("2m"));
+    fireEvent.click(screen.getByText("Start route"));
+    expect(onStart).toHaveBeenCalledWith("auto", 120);
+    unmount();
+
+    const onStart2 = vi.fn();
+    render(<RecordSheet {...props} onStart={onStart2} />);
+    expect(document.querySelector(".slider-label")!.textContent).toBe("2m");
+    fireEvent.click(screen.getByText("Start route"));
+    expect(onStart2).toHaveBeenCalledWith("auto", 120);
+    localStorage.clear();
+  });
+
   it("Cancel in idle calls onStop", () => {
     const onStop = vi.fn();
     render(

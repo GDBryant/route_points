@@ -6,6 +6,9 @@ import {
   tToSeconds,
 } from "./interval";
 
+const MODE_KEY = "rp.rec.mode";
+const INTERVAL_KEY = "rp.rec.interval_s";
+
 export default function RecordSheet({
   state,
   mode: recMode,
@@ -23,9 +26,19 @@ export default function RecordSheet({
   onDrop: () => void;
   onStop: () => void;
 }) {
-  const [mode, setMode] = useState<"manual" | "auto">("manual");
-  const [t, setT] = useState(() => secondsToT(30));
+  const [mode, setMode] = useState<"manual" | "auto">(
+    () => (localStorage.getItem(MODE_KEY) as "manual" | "auto") ?? "manual",
+  );
+  const [t, setT] = useState(() =>
+    secondsToT(Number(localStorage.getItem(INTERVAL_KEY)) || 30),
+  );
   const secs = tToSeconds(t);
+
+  const start = () => {
+    localStorage.setItem(MODE_KEY, mode);
+    if (mode === "auto") localStorage.setItem(INTERVAL_KEY, String(secs));
+    onStart(mode, mode === "auto" ? secs : null);
+  };
 
   if (state === "idle") {
     return (
@@ -66,10 +79,7 @@ export default function RecordSheet({
           </div>
         )}
         <div className="stack">
-          <button
-            className="primary big"
-            onClick={() => onStart(mode, mode === "auto" ? secs : null)}
-          >
+          <button className="primary big" onClick={start}>
             Start route
           </button>
           <button className="big" onClick={onStop}>
