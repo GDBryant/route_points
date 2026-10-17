@@ -292,6 +292,10 @@ button.danger {
   position: relative;
 }
 
+.has-banner .leaflet-top {
+  top: 38px;
+}
+
 .fab2 {
   right: 124px;
 }

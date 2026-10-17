@@ -303,7 +303,7 @@ export default function MapPage() {
   )
 
   return (
-    <div className="mappage">
+    <div className={`mappage${guest || !sync.online || moving ? ' has-banner' : ''}`}>
       {guest && <div className="banner">Viewing as guest</div>}
       {!sync.online && <div className="banner offline">Offline — changes will sync</div>}
       {moving && (
