@@ -28,7 +28,7 @@ export function useGeolocation() {
           speed: p.coords.speed,
         }),
       (e) => setError(e.message),
-      { enableHighAccuracy: true, maximumAge: 2000 },
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
     )
     return () => navigator.geolocation.clearWatch(id)
   }, [])
