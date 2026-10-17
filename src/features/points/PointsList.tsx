@@ -5,11 +5,13 @@ export default function PointsList({
   isEditor,
   onTap,
   onMove,
+  onDelete,
 }: {
   points: Point[];
   isEditor?: boolean;
   onTap: (p: Point) => void;
   onMove?: (p: Point, dir: -1 | 1) => void;
+  onDelete?: (p: Point) => void;
 }) {
   const sorted = [...points].sort(
     (a, b) => (a.seq ?? 9999) - (b.seq ?? 9999) || a.name.localeCompare(b.name),
@@ -40,6 +42,16 @@ export default function PointsList({
                 ↓
               </button>
             </span>
+          )}
+          {isEditor && onDelete && (
+            <button
+              className="danger"
+              onClick={() => {
+                if (confirm(`Delete ${p.name}?`)) onDelete(p);
+              }}
+            >
+              Delete
+            </button>
           )}
         </li>
       ))}

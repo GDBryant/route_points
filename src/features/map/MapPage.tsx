@@ -401,6 +401,7 @@ export default function MapPage() {
                 client_id: other.client_id,
               });
             }}
+            onDelete={isEditor ? onDelete : undefined}
           />
         </div>
       )}
