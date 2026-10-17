@@ -296,6 +296,10 @@ button.danger {
   top: 38px;
 }
 
+.has-banner .sync-badge {
+  top: calc(102px + env(safe-area-inset-top));
+}
+
 .fab2 {
   right: 124px;
 }
@@ -385,7 +389,7 @@ button.big {
 
 .sync-badge {
   position: fixed;
-  top: calc(10px + env(safe-area-inset-top));
+  top: calc(64px + env(safe-area-inset-top));
   right: 10px;
   z-index: 1600;
   min-width: 44px;
