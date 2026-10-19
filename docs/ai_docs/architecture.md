@@ -10,7 +10,7 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 | ----------------------------- | ---------------------------------------------------------------------- | ------- |
 | 1 Decompose MapPage           | DONE 2026-10-19                                                        | 0.3.2   |
 | 2 Generic synced-entity layer | DONE 2026-10-19                                                        | 0.3.3   |
-| 3 Render performance          | todo                                                                   |         |
+| 3 Render performance          | DONE 2026-10-19                                                        | 0.3.4   |
 | 4 Cross-cutting infra         | todo                                                                   |         |
 | 5 Quality gates               | partial — characterisation tests done; bundle budget / Lighthouse todo |         |
 
@@ -29,12 +29,12 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 - `map/AdventureContext.tsx`: `{ id, adv, guest, isEditor, isOwner, snapRadius, points, routes, refresh }`; `AdventureSheets` reads it (6 props instead of 13). Feature-level sheets stay prop-driven (tested standalone).
 - Tests: `lib/entity.test.ts`, +2 routes repo, +1 outbox (unregistered kind → failed). 153 unit tests.
 
-## Phase 3 — Render performance
+## Phase 3 — Render performance (DONE)
 
-- `memo(PointMarker|RoutePolyline|MemberMarker)`; `useMemo` for `others` array, `byId`, bbox.
-- `PositionContext` so 1 Hz GPS updates re-render only `CurrentPositionMarker`, `FollowMe`, `NavigateHud`, FAB gate.
-- `React.lazy` for `MapPage`, `LegalPage`, `GpxSheet`, `DownloadTilesSheet`, `SettingsPage`; `manualChunks` for leaflet/supabase/dexie (bundle 798 kB today).
-- `rollup-plugin-visualizer` report + size budget in CI.
+- `tracking/position.ts` + `PositionContext.tsx`: `PositionProvider` (mounted by `MapPage`) owns `useGeolocation`; `usePosition()` re-renders per tick, `useGeoStatus()` (`state/error/request/posRef`) rarely, `usePositionRef()` never. `MapPageBody` reads only status/ref; tick consumers: `CurrentPositionMarker`, `FollowMe`, `Rotated` (heading-up div), `MapControls` FAB gate, `NavigateHud`, `PointDetailSheet`. `useRecorder`/`usePositions` take `posRef`.
+- `memo(PointMarker|RoutePolyline|MemberMarker)`; stable `onMarkerTap`/`onLongPress`/`openAdd`; `othersArr` memo.
+- `React.lazy`: `MapPage`, `SettingsPage`, `PrivacyPage`/`TermsPage`, `GpxSheet`, `DownloadTilesSheet`. `manualChunks` (function form; rolldown) leaflet/supabase/dexie. `npm run analyze` → `dist/stats.html`.
+- Bundle: 798 kB single chunk → index 266 + supabase 214 + leaflet 158 + dexie 104 + MapPage 47 (lazy). Size budget in CI still Phase 5.
 
 ## Phase 4 — Cross-cutting infra
 

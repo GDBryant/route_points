@@ -2,6 +2,7 @@
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
@@ -62,7 +63,20 @@ export default defineConfig({
         ],
       },
     }),
+    !!process.env.ANALYZE &&
+      visualizer({ filename: "dist/stats.html", gzipSize: true }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("leaflet")) return "leaflet";
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("dexie")) return "dexie";
+        },
+      },
+    },
+  },
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

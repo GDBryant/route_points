@@ -1,16 +1,16 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Marker } from "react-leaflet";
 import { pointIcon } from "./pointIcon";
 import type { Point } from "./api";
 
-export default function PointMarker({
+export default memo(function PointMarker({
   point,
   onTap,
   moving,
   position,
 }: {
   point: Point;
-  onTap: (p: Point) => void;
+  onTap?: (p: Point) => void;
   moving?: boolean;
   position?: [number, number];
 }) {
@@ -22,9 +22,9 @@ export default function PointMarker({
       zIndexOffset={moving ? 1000 : 0}
       eventHandlers={{
         click: () => {
-          if (!moving) onTap(point);
+          if (!moving) onTap?.(point);
         },
       }}
     />
   );
-}
+});

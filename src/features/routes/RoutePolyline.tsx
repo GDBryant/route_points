@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Marker, Polyline } from "react-leaflet";
 import L from "leaflet";
 import type { RouteRow } from "./api";
@@ -7,7 +7,7 @@ import { arrowPositions, withEndpoints } from "./routeUtils";
 
 const COLOUR = "#7b3fb3";
 
-export default function RoutePolyline({
+export default memo(function RoutePolyline({
   route,
   from,
   to,
@@ -59,4 +59,4 @@ export default function RoutePolyline({
       ))}
     </>
   );
-}
+});

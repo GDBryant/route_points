@@ -1,8 +1,7 @@
-import type { GeoPosition } from "@/features/tracking/useGeolocation";
+import { usePosition } from "@/features/tracking/position";
 
 export default function MapControls({
   showEditorFabs,
-  position,
   onAddHere,
   onRecord,
   onSettings,
@@ -11,7 +10,6 @@ export default function MapControls({
   onZoomToAdventure,
 }: {
   showEditorFabs: boolean;
-  position: GeoPosition | null;
   onAddHere: () => void;
   onRecord: () => void;
   onSettings: () => void;
@@ -19,6 +17,7 @@ export default function MapControls({
   onToggleHeading: () => void;
   onZoomToAdventure: () => void;
 }) {
+  const position = usePosition();
   return (
     <>
       {showEditorFabs && (

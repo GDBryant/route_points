@@ -44,10 +44,12 @@ const pos = {
   speed: 2,
 };
 const self = { user_id: "u1", name: "Alice", colour: "#123" };
+const posRef = { current: null as typeof pos | null };
 
 describe("usePositions", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    posRef.current = pos;
     send.mockClear();
     track.mockClear();
   });
@@ -59,7 +61,7 @@ describe("usePositions", () => {
         adventureId: "a1",
         publish: true,
         self,
-        position: pos,
+        posRef,
       }),
     );
     await act(async () => {
@@ -76,7 +78,7 @@ describe("usePositions", () => {
         adventureId: "a1",
         publish: false,
         self,
-        position: pos,
+        posRef,
       }),
     );
     await act(async () => {
@@ -91,7 +93,7 @@ describe("usePositions", () => {
         adventureId: "a1",
         publish: true,
         self,
-        position: null,
+        posRef,
       }),
     );
     await act(async () => {
@@ -121,7 +123,7 @@ describe("usePositions", () => {
           adventureId: "a1",
           publish: true,
           self: s,
-          position: null,
+          posRef,
         }),
       { initialProps: { s: null as typeof self | null } },
     );

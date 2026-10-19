@@ -1,10 +1,14 @@
+import { lazy, Suspense } from "react";
 import AdventureSettingsSheet from "@/features/adventures/AdventureSettingsSheet";
 import ShareSheet from "@/features/adventures/ShareSheet";
-import GpxSheet from "@/features/gpx/GpxSheet";
 import { shareGpx } from "@/features/gpx/gpx";
-import DownloadTilesSheet from "@/features/tiles/DownloadTilesSheet";
 import { adventureBbox } from "@/features/tiles/tileMath";
 import { useAdventureCtx } from "./AdventureContext";
+
+const GpxSheet = lazy(() => import("@/features/gpx/GpxSheet"));
+const DownloadTilesSheet = lazy(
+  () => import("@/features/tiles/DownloadTilesSheet"),
+);
 
 export type Sheet = "settings" | "share" | "gpx" | "tiles";
 
@@ -59,26 +63,28 @@ export default function AdventureSheets({
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet === "gpx" && (
-        <GpxSheet
-          adventureId={adventureId}
-          isEditor={isEditor}
-          onClose={() => setSheet(null)}
-          onDone={onRefresh}
-        />
-      )}
-      {sheet === "tiles" && (
-        <DownloadTilesSheet
-          adventureId={adventureId}
-          bbox={adventureBbox([
-            ...points,
-            ...routes.flatMap((r) =>
-              r.coords.map(([lng, lat]) => ({ lat, lng })),
-            ),
-          ])}
-          onClose={() => setSheet(null)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {sheet === "gpx" && (
+          <GpxSheet
+            adventureId={adventureId}
+            isEditor={isEditor}
+            onClose={() => setSheet(null)}
+            onDone={onRefresh}
+          />
+        )}
+        {sheet === "tiles" && (
+          <DownloadTilesSheet
+            adventureId={adventureId}
+            bbox={adventureBbox([
+              ...points,
+              ...routes.flatMap((r) =>
+                r.coords.map(([lng, lat]) => ({ lat, lng })),
+              ),
+            ])}
+            onClose={() => setSheet(null)}
+          />
+        )}
+      </Suspense>
     </>
   );
 }

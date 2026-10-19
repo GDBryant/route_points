@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
 import { type WaypointInput } from "./api";
 import { queueWaypoints } from "./repo";
@@ -20,7 +26,7 @@ const FLUSH_COUNT = 10;
 const FLUSH_MS = 30_000;
 
 export function useRecorder(
-  position: GeoPosition | null,
+  posRef: RefObject<GeoPosition | null>,
   points: Point[],
   snapRadiusM: number,
 ) {
@@ -32,7 +38,6 @@ export function useRecorder(
   const [elapsedS, setElapsedS] = useState(0);
   const [pendingCoords, setPendingCoords] = useState<[number, number][]>([]);
 
-  const posRef = useRef(position);
   const bufRef = useRef<WaypointInput[]>([]);
   const seqRef = useRef(0);
   const lastPosRef = useRef<GeoPosition | null>(null);
@@ -42,13 +47,10 @@ export function useRecorder(
   const pointsRef = useRef(points);
 
   useEffect(() => {
-    posRef.current = position;
-  }, [position]);
-  useEffect(() => {
     pointsRef.current = points;
   }, [points]);
 
-  const dropWaypoint = () => {
+  const dropWaypoint = useCallback(() => {
     const p = posRef.current;
     if (!p || (p.accuracy != null && p.accuracy > MAX_ACCURACY_M)) return false;
     seqRef.current += 1;
@@ -65,16 +67,16 @@ export function useRecorder(
     setPendingCoords((c) => [...c, [p.lng, p.lat]]);
     setWaypointCount((n) => n + 1);
     return true;
-  };
+  }, [posRef]);
 
-  const flush = async () => {
+  const flush = useCallback(async () => {
     if (!routeRef.current || bufRef.current.length === 0) return;
     const batch = bufRef.current;
     bufRef.current = [];
     await queueWaypoints(routeRef.current.client_id, batch).catch(() => {
       bufRef.current = [...batch, ...bufRef.current];
     });
-  };
+  }, []);
 
   const start = (mode: "manual" | "auto", intervalS: number | null) => {
     const r: PendingRoute = {
@@ -147,11 +149,11 @@ export function useRecorder(
       clearInterval(tick);
       clearInterval(flushTimer);
     };
-  }, [state]);
+  }, [state, posRef, dropWaypoint, flush]);
 
   useEffect(() => {
     if (state === "recording" && bufRef.current.length >= FLUSH_COUNT) flush();
-  }, [waypointCount, state]);
+  }, [waypointCount, state, flush]);
 
   return {
     state,

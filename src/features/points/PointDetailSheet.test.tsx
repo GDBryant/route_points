@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import PointDetailSheet from "./PointDetailSheet";
+import { PositionContext } from "@/features/tracking/position";
 import type { Point } from "./api";
 
 const p: Point = {
@@ -17,14 +18,15 @@ const pos = { lat: -33.0, lng: 18.01, accuracy: 5, heading: 0, speed: 0 };
 
 const renderSheet = (isEditor: boolean) =>
   render(
-    <PointDetailSheet
-      point={p}
-      position={pos}
-      isEditor={isEditor}
-      onEdit={vi.fn()}
-      onDelete={vi.fn()}
-      onClose={vi.fn()}
-    />,
+    <PositionContext.Provider value={pos}>
+      <PointDetailSheet
+        point={p}
+        isEditor={isEditor}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onClose={vi.fn()}
+      />
+    </PositionContext.Provider>,
   );
 
 describe("PointDetailSheet", () => {
@@ -48,15 +50,16 @@ describe("PointDetailSheet", () => {
   it("Move calls onMove with point", () => {
     const onMove = vi.fn();
     render(
-      <PointDetailSheet
-        point={p}
-        position={pos}
-        isEditor={true}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onMove={onMove}
-        onClose={vi.fn()}
-      />,
+      <PositionContext.Provider value={pos}>
+        <PointDetailSheet
+          point={p}
+          isEditor={true}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onMove={onMove}
+          onClose={vi.fn()}
+        />
+      </PositionContext.Provider>,
     );
     fireEvent.click(screen.getByText("Move"));
     expect(onMove).toHaveBeenCalledWith(p);

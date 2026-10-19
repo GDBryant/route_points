@@ -1,11 +1,10 @@
 import type { Point } from "./api";
-import type { GeoPosition } from "@/features/tracking/useGeolocation";
+import { usePosition } from "@/features/tracking/position";
 import { bearingDeg, haversineM } from "@/lib/geo";
 import { KIND_LABEL, type Kind } from "./kinds";
 
 export default function PointDetailSheet({
   point,
-  position,
   isEditor,
   onEdit,
   onDelete,
@@ -14,7 +13,6 @@ export default function PointDetailSheet({
   onClose,
 }: {
   point: Point;
-  position: GeoPosition | null;
   isEditor: boolean;
   onEdit: (p: Point) => void;
   onDelete: (p: Point) => void;
@@ -22,6 +20,7 @@ export default function PointDetailSheet({
   onMove?: (p: Point) => void;
   onClose: () => void;
 }) {
+  const position = usePosition();
   const dist =
     position && haversineM(position, { lat: point.lat, lng: point.lng });
   const bearing =

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { usePositionRef } from "@/features/tracking/position";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
 import type { Point } from "@/features/points/api";
 import { savePointLocal } from "@/features/points/repo";
@@ -21,20 +22,19 @@ export interface AddState {
 
 export function useRecordingFlow({
   adventureId,
-  position,
   points,
   snapRadius,
   refreshPoints,
   refreshRoutes,
 }: {
   adventureId: string;
-  position: GeoPosition | null;
   points: Point[];
   snapRadius: number;
   refreshPoints: () => void;
   refreshRoutes: () => void;
 }) {
-  const recorder = useRecorder(position, points, snapRadius);
+  const posRef = usePositionRef();
+  const recorder = useRecorder(posRef, points, snapRadius);
   const [recording, setRecording] = useState(false);
   const [adding, setAdding] = useState<AddState | null>(null);
   const [endRouteAt, setEndRouteAt] = useState(false);
@@ -45,12 +45,20 @@ export function useRecordingFlow({
     forceToId?: string;
   } | null>(null);
 
-  const openAdd = (
-    lat: number,
-    lng: number,
-    accuracy: number | null,
-    extra?: Partial<AddState>,
-  ) => setAdding({ lat, lng, accuracy, ...extra });
+  const openAdd = useCallback(
+    (
+      lat: number,
+      lng: number,
+      accuracy: number | null,
+      extra?: Partial<AddState>,
+    ) => setAdding({ lat, lng, accuracy, ...extra }),
+    [],
+  );
+
+  const addHere = useCallback(() => {
+    const p = posRef.current;
+    if (p) openAdd(p.lat, p.lng, p.accuracy);
+  }, [posRef, openAdd]);
 
   const closeAdd = () => {
     setAdding(null);
@@ -147,16 +155,18 @@ export function useRecordingFlow({
         started_at: r.started_at,
         from_point_id: r.from_point_id,
       }).catch(() => {});
-    if (position && !nearestPoint(position, points, START_PROMPT_M))
-      openAdd(position.lat, position.lng, position.accuracy, {
+    const p = posRef.current;
+    if (p && !nearestPoint(p, points, START_PROMPT_M))
+      openAdd(p.lat, p.lng, p.accuracy, {
         kind: "start",
         role: "start",
       });
   };
 
   const onDrop = () => {
-    if (recorder.dropWaypoint() && position)
-      openAdd(position.lat, position.lng, position.accuracy, {
+    const p = posRef.current;
+    if (recorder.dropWaypoint() && p)
+      openAdd(p.lat, p.lng, p.accuracy, {
         kind: "turn",
         role: "turn",
       });
@@ -185,6 +195,7 @@ export function useRecordingFlow({
     endRouteAt,
     setEndRouteAt,
     openAdd,
+    addHere,
     closeAdd,
     savePoint,
     openRecord,

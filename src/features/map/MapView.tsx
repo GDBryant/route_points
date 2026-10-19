@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   Circle,
   CircleMarker,
@@ -9,7 +15,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import type { GeoPosition } from "@/features/tracking/useGeolocation";
+import { useGeoStatus, usePosition } from "@/features/tracking/position";
 import PointMarker from "@/features/points/PointMarker";
 import type { Point } from "@/features/points/api";
 import RoutePolyline from "@/features/routes/RoutePolyline";
@@ -29,7 +35,8 @@ const DEFAULT_CENTER: [number, number] = [-33.56, 18.48];
 const ESRI_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
-function CurrentPositionMarker({ position }: { position: GeoPosition | null }) {
+function CurrentPositionMarker() {
+  const position = usePosition();
   if (!position) return null;
   return (
     <>
@@ -49,13 +56,8 @@ function CurrentPositionMarker({ position }: { position: GeoPosition | null }) {
   );
 }
 
-function FollowMe({
-  position,
-  following,
-}: {
-  position: GeoPosition | null;
-  following: boolean;
-}) {
+function FollowMe({ following }: { following: boolean }) {
+  const position = usePosition();
   const map = useMap();
   useEffect(() => {
     if (following && position) map.setView([position.lat, position.lng]);
@@ -119,35 +121,52 @@ function FlyTo({
   return null;
 }
 
+function Rotated({
+  headingUp,
+  children,
+}: {
+  headingUp: boolean;
+  children: ReactNode;
+}) {
+  const position = usePosition();
+  const rotation =
+    headingUp && position?.heading != null ? -position.heading : 0;
+  return (
+    <div
+      className={rotation ? "mrot" : undefined}
+      style={{ ["--rot" as string]: `${rotation}deg` }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function MapView({
   points = [],
   routes = [],
   recordingCoords = [],
   others = [],
-  rotation = 0,
+  headingUp = false,
   onMarkerTap,
   onRouteTap,
   onLongPress,
   movingId,
   onCenterChange,
   flyTo,
-  position = null,
-  error = null,
 }: {
   points?: Point[];
   routes?: RouteRow[];
   recordingCoords?: { lat: number; lng: number }[];
   others?: LivePos[];
-  rotation?: number;
+  headingUp?: boolean;
   onMarkerTap?: (p: Point) => void;
   onRouteTap?: (r: RouteRow) => void;
   onLongPress?: (lat: number, lng: number) => void;
   movingId?: string | null;
   onCenterChange?: (lat: number, lng: number) => void;
   flyTo?: FlyTarget | null;
-  position?: GeoPosition | null;
-  error?: string | null;
 }) {
+  const { error } = useGeoStatus();
   const [following, setFollowing] = useState(true);
   const [center, setCenter] = useState<[number, number] | null>(null);
   const stopFollowing = useCallback(() => setFollowing(false), []);
@@ -158,14 +177,8 @@ export default function MapView({
   }, [movingId, center, onCenterChange]);
 
   return (
-    <div
-      className={rotation ? "mrot" : undefined}
-      style={{ ["--rot" as string]: `${rotation}deg` }}
-    >
-      <MapContainer
-        center={position ? [position.lat, position.lng] : DEFAULT_CENTER}
-        zoom={14}
-      >
+    <Rotated headingUp={headingUp}>
+      <MapContainer center={DEFAULT_CENTER} zoom={14}>
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="OpenStreetMap">
             <TileLayer
@@ -177,12 +190,12 @@ export default function MapView({
             <TileLayer url={ESRI_URL} attribution="Tiles © Esri" />
           </LayersControl.BaseLayer>
         </LayersControl>
-        <CurrentPositionMarker position={position} />
+        <CurrentPositionMarker />
         {points.map((p) => (
           <PointMarker
             key={p.id}
             point={p}
-            onTap={(pt) => onMarkerTap?.(pt)}
+            onTap={onMarkerTap}
             moving={p.id === movingId}
             position={p.id === movingId && center ? center : undefined}
           />
@@ -207,7 +220,7 @@ export default function MapView({
             pathOptions={{ color: "#7b3fb3", weight: 3, dashArray: "6 8" }}
           />
         )}
-        <FollowMe position={position} following={following} />
+        <FollowMe following={following} />
         <MapEvents onLongPress={onLongPress} onUserMove={stopFollowing} />
         <CenterTracker active={!!movingId} onCenter={setCenter} />
         <FlyTo target={flyTo ?? null} onFly={stopFollowing} />
@@ -219,6 +232,6 @@ export default function MapView({
         </button>
       )}
       {error && <div className="geo-error">{error}</div>}
-    </div>
+    </Rotated>
   );
 }

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -9,13 +10,23 @@ import { AuthProvider } from "@/features/auth/AuthProvider";
 import { useAuth } from "@/features/auth/useAuth";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import LoginPage from "@/features/auth/LoginPage";
-import SettingsPage from "@/features/auth/SettingsPage";
 import AdventuresPage from "@/features/adventures/AdventuresPage";
 import JoinPage from "@/features/adventures/JoinPage";
-import MapPage from "@/features/map/MapPage";
-import { PrivacyPage, TermsPage } from "@/features/legal/LegalPage";
 import UpdateToast from "@/features/pwa/UpdateToast";
 import ErrorBoundary from "@/features/pwa/ErrorBoundary";
+
+const MapPage = lazy(() => import("@/features/map/MapPage"));
+const SettingsPage = lazy(() => import("@/features/auth/SettingsPage"));
+const PrivacyPage = lazy(() =>
+  import("@/features/legal/LegalPage").then((m) => ({
+    default: m.PrivacyPage,
+  })),
+);
+const TermsPage = lazy(() =>
+  import("@/features/legal/LegalPage").then((m) => ({
+    default: m.TermsPage,
+  })),
+);
 
 function Home() {
   const { user, loading } = useAuth();
@@ -38,30 +49,32 @@ export default function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/join/:token" element={<JoinPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route
-              path="/adventures"
-              element={
-                <RequireAuth>
-                  <AdventuresPage />
-                </RequireAuth>
-              }
-            />
-            <Route path="/a/:id" element={<MapRoute />} />
-            <Route
-              path="/settings"
-              element={
-                <RequireAuth>
-                  <SettingsPage />
-                </RequireAuth>
-              }
-            />
-          </Routes>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/join/:token" element={<JoinPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route
+                path="/adventures"
+                element={
+                  <RequireAuth>
+                    <AdventuresPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/a/:id" element={<MapRoute />} />
+              <Route
+                path="/settings"
+                element={
+                  <RequireAuth>
+                    <SettingsPage />
+                  </RequireAuth>
+                }
+              />
+            </Routes>
+          </Suspense>
         </AuthProvider>
         <UpdateToast />
       </ErrorBoundary>

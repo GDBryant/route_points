@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import MapView from "./MapView";
+import { PositionProvider } from "@/features/tracking/PositionContext";
 
 let handlers: Record<string, (...args: unknown[]) => void>;
 const map = {
@@ -45,17 +46,29 @@ vi.mock("@/features/tracking/useGeolocation", () => ({
 
 describe("MapView", () => {
   it("renders without crashing", () => {
-    const { container } = render(<MapView />);
+    const { container } = render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
     expect(container.querySelector(".leaflet-container")).toBeInTheDocument();
   });
 
   it("hides Re-center while following", () => {
-    render(<MapView />);
+    render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
     expect(screen.queryByText("Re-center")).toBeNull();
   });
 
   it("shows Re-center after manual drag and hides after click", () => {
-    render(<MapView />);
+    render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
     act(() => handlers.dragstart());
     const btn = screen.getByText("Re-center");
     fireEvent.click(btn);
@@ -63,7 +76,11 @@ describe("MapView", () => {
   });
 
   it("stops following on flyTo", () => {
-    render(<MapView flyTo={{ lat: 1, lng: 2, t: 1 }} />);
+    render(
+      <PositionProvider>
+        <MapView flyTo={{ lat: 1, lng: 2, t: 1 }} />
+      </PositionProvider>,
+    );
     expect(screen.getByText("Re-center")).toBeInTheDocument();
   });
 
@@ -78,7 +95,11 @@ describe("MapView", () => {
       note: null,
     };
     const fn = vi.fn();
-    render(<MapView points={[p]} movingId="p1" onCenterChange={fn} />);
+    render(
+      <PositionProvider>
+        <MapView points={[p]} movingId="p1" onCenterChange={fn} />
+      </PositionProvider>,
+    );
     expect(screen.getByTestId("marker").dataset.pos).toBe("5,6");
     expect(fn).toHaveBeenCalledWith(5, 6);
   });

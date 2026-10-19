@@ -40,9 +40,8 @@ describe("useRecorder", () => {
 
   it("auto mode drops on interval when moving, skips when stationary", async () => {
     let lat = -33.5;
-    const { result, rerender } = renderHook(({ p }) => useRecorder(p, [], 20), {
-      initialProps: { p: pos() },
-    });
+    const ref = { current: pos() };
+    const { result } = renderHook(() => useRecorder(ref, [], 20));
     act(() => result.current.start("auto", 5));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6_000);
@@ -57,7 +56,7 @@ describe("useRecorder", () => {
 
     for (let i = 0; i < 3; i++) {
       lat -= 0.0002;
-      rerender({ p: pos(5, lat, 18.4) });
+      ref.current = pos(5, lat, 18.4);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5_500);
       });
@@ -67,14 +66,14 @@ describe("useRecorder", () => {
   });
 
   it("skips waypoint when accuracy > 50 m", () => {
-    const { result } = renderHook(() => useRecorder(pos(100), [], 20));
+    const { result } = renderHook(() => useRecorder({ current: pos(100) }, [], 20));
     act(() => result.current.start("manual", null));
     act(() => result.current.dropWaypoint());
     expect(result.current.waypointCount).toBe(0);
   });
 
   it("manual drop + flush on stop calls addWaypoints", async () => {
-    const { result } = renderHook(() => useRecorder(pos(), [], 20));
+    const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
     act(() => result.current.start("manual", null));
     act(() => result.current.dropWaypoint());
     act(() => result.current.dropWaypoint());
@@ -99,7 +98,7 @@ describe("useRecorder", () => {
       value: { request },
       configurable: true,
     });
-    const { result } = renderHook(() => useRecorder(pos(), [], 20));
+    const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
     act(() => result.current.start("manual", null));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
@@ -113,14 +112,14 @@ describe("useRecorder", () => {
 
   it("snaps from_point to nearest point within radius", () => {
     const { result } = renderHook(() =>
-      useRecorder(pos(), [pt("p-near"), pt("p-far", 0, 0)], 20),
+      useRecorder({ current: pos() }, [pt("p-near"), pt("p-far", 0, 0)], 20),
     );
     act(() => result.current.start("manual", null));
     expect(result.current.route?.from_point_id).toBe("p-near");
   });
 
   it("setFromPoint updates route and no-ops when idle", () => {
-    const { result } = renderHook(() => useRecorder(pos(), [], 20));
+    const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
     act(() => result.current.setFromPoint("p-x"));
     expect(result.current.route).toBeNull();
     act(() => result.current.start("manual", null));
@@ -129,7 +128,7 @@ describe("useRecorder", () => {
   });
 
   it("flushes buffered waypoints at 10", async () => {
-    const { result } = renderHook(() => useRecorder(pos(), [], 20));
+    const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
     act(() => result.current.start("manual", null));
     for (let i = 0; i < 10; i++) act(() => result.current.dropWaypoint());
     await act(async () => {

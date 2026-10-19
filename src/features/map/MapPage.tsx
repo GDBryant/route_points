@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import MapView, { type FlyTarget } from "./MapView";
 import MapBanners from "./MapBanners";
@@ -10,7 +10,8 @@ import { AdventureContext, type AdventureCtx } from "./AdventureContext";
 import { useAdventure } from "./useAdventure";
 import { useMovePoint } from "./useMovePoint";
 import { useRecordingFlow } from "./useRecordingFlow";
-import { useGeolocation } from "@/features/tracking/useGeolocation";
+import { PositionProvider } from "@/features/tracking/PositionContext";
+import { useGeoStatus } from "@/features/tracking/position";
 import { useAuth } from "@/features/auth/useAuth";
 import { usePoints } from "@/features/points/usePoints";
 import { removePoint, swapSeq } from "@/features/points/repo";
@@ -34,6 +35,14 @@ import RoutesList from "@/features/routes/RoutesList";
 import { boundsOf } from "@/features/tiles/tileMath";
 
 export default function MapPage() {
+  return (
+    <PositionProvider>
+      <MapPageBody />
+    </PositionProvider>
+  );
+}
+
+function MapPageBody() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -42,7 +51,7 @@ export default function MapPage() {
   const { guest, adv, setAdv, isEditor, isOwner, snapRadius, setSnapRadius } =
     useAdventure({ id, token, user });
   const exit = () => navigate(guest ? "/" : "/adventures");
-  const { position, error, state, request } = useGeolocation();
+  const { state, request, posRef } = useGeoStatus();
   const { points, refresh } = usePoints(
     guest ? { token: token! } : { adventureId: id },
   );
@@ -63,7 +72,6 @@ export default function MapPage() {
   const move = useMovePoint({ adventureId: id, setFlyTo, refresh });
   const flow = useRecordingFlow({
     adventureId: id,
-    position,
     points,
     snapRadius,
     refreshPoints: refresh,
@@ -83,8 +91,9 @@ export default function MapPage() {
     token: guest ? token : null,
     publish: isEditor && sharePos,
     self,
-    position,
+    posRef,
   });
+  const othersArr = useMemo(() => [...others.values()], [others]);
 
   const onDelete = async (p: Point) => {
     await removePoint(p);
@@ -114,9 +123,15 @@ export default function MapPage() {
   };
 
   const zoomToAdventure = () => {
-    const b = boundsOf(points, routes, position);
+    const b = boundsOf(points, routes, posRef.current);
     if (b) setFlyTo({ ...b, t: Date.now() });
   };
+
+  const openAdd = flow.openAdd;
+  const onLongPress = useCallback(
+    (lat: number, lng: number) => openAdd(lat, lng, null),
+    [openAdd],
+  );
 
   const toggleSharePos = () => {
     const next = !sharePos;
@@ -185,17 +200,11 @@ export default function MapPage() {
           points={points}
           routes={routes}
           recordingCoords={flow.recordingCoords}
-          others={[...others.values()]}
-          rotation={
-            headingUp && position?.heading != null ? -position.heading : 0
-          }
-          position={position}
-          error={error}
+          others={othersArr}
+          headingUp={headingUp}
           onMarkerTap={setSelected}
           onRouteTap={setSelectedRoute}
-          onLongPress={
-            isEditor ? (lat, lng) => flow.openAdd(lat, lng, null) : undefined
-          }
+          onLongPress={isEditor ? onLongPress : undefined}
           movingId={move.moving?.id ?? null}
           onCenterChange={move.onCenterChange}
           flyTo={flyTo}
@@ -248,11 +257,7 @@ export default function MapPage() {
         {tab === "map" && (
           <MapControls
             showEditorFabs={isEditor && !adding && !recording && !finishing}
-            position={position}
-            onAddHere={() => {
-              if (position)
-                flow.openAdd(position.lat, position.lng, position.accuracy);
-            }}
+            onAddHere={flow.addHere}
             onRecord={flow.openRecord}
             onSettings={() => setSheet("settings")}
             headingUp={headingUp}
@@ -262,17 +267,12 @@ export default function MapPage() {
         )}
 
         {navTarget && (
-          <NavigateHud
-            point={navTarget}
-            position={position}
-            onClose={() => setNavTarget(null)}
-          />
+          <NavigateHud point={navTarget} onClose={() => setNavTarget(null)} />
         )}
 
         {selected && !adding && (
           <PointDetailSheet
             point={selected}
-            position={position}
             isEditor={isEditor}
             onEdit={(p) => {
               setSelected(null);

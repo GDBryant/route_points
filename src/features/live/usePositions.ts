@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { supabase } from "@/lib/supabase";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
 import { enqueuePosition } from "./sync";
@@ -31,27 +31,23 @@ export function usePositions({
   token,
   publish,
   self,
-  position,
+  posRef,
 }: {
   adventureId: string;
   token?: string | null;
   publish: boolean;
   self: SelfInfo | null;
-  position: GeoPosition | null;
+  posRef: RefObject<GeoPosition | null>;
 }) {
   const [others, setOthers] = useState<Map<string, LivePos>>(new Map());
   const [online, setOnline] = useState<Set<string>>(new Set());
 
   const selfRef = useRef(self);
-  const posRef = useRef(position);
   const pubRef = useRef(publish);
   const lastRenderRef = useRef<Map<string, number>>(new Map());
   useEffect(() => {
     selfRef.current = self;
   }, [self]);
-  useEffect(() => {
-    posRef.current = position;
-  }, [position]);
   useEffect(() => {
     pubRef.current = publish;
   }, [publish]);
@@ -173,7 +169,7 @@ export function usePositions({
       clearInterval(prune);
       supabase.removeChannel(chan);
     };
-  }, [adventureId, token, selfId]);
+  }, [adventureId, token, selfId, posRef]);
 
   return { others, online };
 }
