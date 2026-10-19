@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
-import { enqueuePosition } from "@/features/sync/outbox";
+import { enqueuePosition } from "./sync";
 
 export interface LivePos {
   user_id: string;

@@ -8,8 +8,8 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 
 | Phase                         | Status                                                                 | Version |
 | ----------------------------- | ---------------------------------------------------------------------- | ------- |
-| 1 Decompose MapPage           | DONE 2026-10-19 (uncommitted)                                          | 0.3.2   |
-| 2 Generic synced-entity layer | todo                                                                   |         |
+| 1 Decompose MapPage           | DONE 2026-10-19                                                        | 0.3.2   |
+| 2 Generic synced-entity layer | DONE 2026-10-19                                                        | 0.3.3   |
 | 3 Render performance          | todo                                                                   |         |
 | 4 Cross-cutting infra         | todo                                                                   |         |
 | 5 Quality gates               | partial — characterisation tests done; bundle budget / Lighthouse todo |         |
@@ -21,13 +21,13 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 - `MapPage.test.tsx`: 11 characterisation tests (guest, FAB gate, long-press, start/stop prompts, snap finish, tabs, move, reorder, sheets). Green before and after.
 - Result: `MapPage` 763 → 357 lines (remaining is JSX composition; Phase 2 context removes prop threading). Target ≤150 deferred.
 
-## Phase 2 — Generic synced-entity layer
+## Phase 2 — Generic synced-entity layer (DONE)
 
-- `lib/entity.ts`: `defineEntity<T>({ table, kindUpsert, kindDelete, list, listByToken, upsert, remove, subscribe, toPayload, fromServer, onReconcile? })`.
-- Generates `repo` (`syncFromServer`, `saveLocal`, `remove`) and `useEntity(opts)`; `points`/`routes` become ~30-line definitions. Routes keep coords-preservation and `add_waypoints` via `onReconcile`.
-- Outbox becomes a registry: `registerOutboxHandler(kind, { run, reconcile, dependsOn: ["from_point_id", ...] })`; `sync/outbox.ts` stops importing feature code (breaks sync↔feature cycle).
-- `AdventureContext` providing `adv, role, isEditor, points, routes, guest` so sheets stop taking 10 props.
-- Single data-source abstraction for token (guest) vs member reads.
+- `lib/entity.ts`: `defineEntity<T>({ table, kindUpsert, kindDelete, list, listByToken, subscribe, applyEvent?, mergeRemote?, ownsItem? })` → `{ syncFromServer, remove, useEntity }`. `useEntity` handles token (guest) vs Dexie (member) reads. `saveLocal` stays per-feature (payload shapes differ).
+- `points/repo.ts` → `pointEntity` (`applyEvent` put/delete), `routes/repo.ts` → `routeEntity` (`mergeRemote` keeps local coords, `ownsItem` also matches `add_waypoints`). `usePoints`/`useRoutes` are 6-line wrappers.
+- Outbox registry: `registerOutboxHandler(kind, { run, reconcile?, refs?, latestWins? })` + `rewriteIds(from, to)`; handlers live in `{points,routes,live}/sync.ts`, side-effect-imported from `main.tsx` and each `repo.ts`. `sync/outbox.ts` imports no feature code.
+- `map/AdventureContext.tsx`: `{ id, adv, guest, isEditor, isOwner, snapRadius, points, routes, refresh }`; `AdventureSheets` reads it (6 props instead of 13). Feature-level sheets stay prop-driven (tested standalone).
+- Tests: `lib/entity.test.ts`, +2 routes repo, +1 outbox (unregistered kind → failed). 153 unit tests.
 
 ## Phase 3 — Render performance
 

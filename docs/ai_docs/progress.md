@@ -29,3 +29,4 @@
 - 2026-10-17 Delete fix: removePoint/removeRoute always queue server delete (id==client_id since 0005 broke the never-synced check); sync ignores rows with pending delete. Points/Routes tabs get Delete buttons. v0.2.1. Rule: bump version every push.
 - 2026-10-19 M7 general-purpose routes: kinds, auto default, start/turn/end prompts, OSM end names, ./run_tests. v0.3.0.
 - 2026-10-19 MapPage refactor: characterisation tests (MapPage.test.tsx, 11 cases) then decomposed into hooks + components; behaviour preserved. v0.3.2.
+- 2026-10-19 Phase 2: `lib/entity.ts` defineEntity, outbox handler registry (sync no longer imports features), AdventureContext. 153 unit tests. v0.3.3.

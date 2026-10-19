@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { drain, enqueue, MAX_ATTEMPTS, snooze } from "./outbox";
-import { db } from "@/lib/db";
+import { db, type OutboxKind } from "@/lib/db";
+import "@/features/points/sync";
+import "@/features/routes/sync";
+import "@/features/live/sync";
 
 const upsertPoint = vi.fn();
 const deletePoint = vi.fn();
@@ -120,5 +123,13 @@ describe("outbox", () => {
     expect(row?.client_id).toBe(cid);
     expect(row?.name).toBe("R");
     expect(await db.routes.get(cid)).toBeUndefined();
+  });
+
+  it("unregistered kind fails with no-handler error", async () => {
+    await enqueue("bogus" as OutboxKind, {});
+    const res = await drain();
+    expect(res.failed).toBe(1);
+    const item = (await db.outbox.toArray())[0];
+    expect(item.last_error).toMatch(/no handler/);
   });
 });

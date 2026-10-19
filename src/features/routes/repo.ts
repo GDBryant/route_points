@@ -1,49 +1,36 @@
 import { db } from "@/lib/db";
+import { defineEntity } from "@/lib/entity";
 import { enqueue } from "@/features/sync/outbox";
 import {
   listRoutes,
+  listRoutesByToken,
+  subscribeRoutes,
   type RouteInput,
   type RouteRow,
   type WaypointInput,
 } from "./api";
+import "./sync";
 
-export async function syncRoutesFromServer(adventureId: string) {
-  const remote = await listRoutes(adventureId);
-  await db.transaction("rw", db.routes, db.outbox, async () => {
-    const local = await db.routes
-      .where("adventure_id")
-      .equals(adventureId)
-      .toArray();
-    const items = await db.outbox.toArray();
-    const pendingClientIds = new Set(
-      items
-        .filter((i) => i.kind === "upsert_route")
-        .map((i) => (i.payload as { client_id: string }).client_id),
+export const routeEntity = defineEntity<RouteRow>({
+  table: db.routes,
+  kindUpsert: "upsert_route",
+  kindDelete: "delete_route",
+  list: listRoutes,
+  listByToken: listRoutesByToken,
+  subscribe: subscribeRoutes,
+  mergeRemote: (r, local) =>
+    r.coords.length ? r : { ...r, coords: local?.coords ?? r.coords },
+  ownsItem: (item, clientId) => {
+    const p = item.payload as { client_id?: string; route_client_id?: string };
+    return (
+      (item.kind === "upsert_route" && p.client_id === clientId) ||
+      (item.kind === "add_waypoints" && p.route_client_id === clientId)
     );
-    const pendingDeleteIds = new Set(
-      items
-        .filter((i) => i.kind === "delete_route")
-        .map((i) => (i.payload as { id: string }).id),
-    );
-    const live = remote.filter((r) => !pendingDeleteIds.has(r.id));
-    const remoteIds = new Set(live.map((r) => r.id));
-    for (const r of local) {
-      if (!remoteIds.has(r.id) && !pendingClientIds.has(r.client_id))
-        await db.routes.delete(r.id);
-    }
-    const localByClient = new Map(local.map((r) => [r.client_id, r]));
-    await db.routes.bulkPut(
-      live.map((r) =>
-        r.coords.length
-          ? r
-          : {
-              ...r,
-              coords: localByClient.get(r.client_id)?.coords ?? r.coords,
-            },
-      ),
-    );
-  });
-}
+  },
+});
+
+export const syncRoutesFromServer = routeEntity.syncFromServer;
+export const removeRoute = routeEntity.remove;
 
 export async function saveRouteLocal(
   input: RouteInput & { coords?: [number, number][] },
@@ -84,18 +71,4 @@ export async function queueWaypoints(
   wps: WaypointInput[],
 ) {
   await enqueue("add_waypoints", { route_client_id: routeClientId, wps });
-}
-
-export async function removeRoute(route: RouteRow) {
-  await db.routes.delete(route.id);
-  const items = await db.outbox.toArray();
-  for (const i of items) {
-    const p = i.payload as { client_id?: string; route_client_id?: string };
-    if (
-      (i.kind === "upsert_route" && p.client_id === route.client_id) ||
-      (i.kind === "add_waypoints" && p.route_client_id === route.client_id)
-    )
-      await db.outbox.delete(i.id!);
-  }
-  await enqueue("delete_route", { id: route.id });
 }

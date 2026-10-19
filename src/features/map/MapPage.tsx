@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import MapView, { type FlyTarget } from "./MapView";
 import MapBanners from "./MapBanners";
@@ -6,6 +6,7 @@ import MapControls from "./MapControls";
 import MembersTab from "./MembersTab";
 import TabBar, { type Tab } from "./TabBar";
 import AdventureSheets, { type Sheet } from "./AdventureSheets";
+import { AdventureContext, type AdventureCtx } from "./AdventureContext";
 import { useAdventure } from "./useAdventure";
 import { useMovePoint } from "./useMovePoint";
 import { useRecordingFlow } from "./useRecordingFlow";
@@ -124,6 +125,34 @@ export default function MapPage() {
   };
 
   const { adding, finishing, recorder, recording } = flow;
+  const ctx = useMemo<AdventureCtx>(
+    () => ({
+      id,
+      adv,
+      guest,
+      isEditor,
+      isOwner,
+      snapRadius,
+      points,
+      routes,
+      refresh: () => {
+        refresh();
+        refreshRoutes();
+      },
+    }),
+    [
+      id,
+      adv,
+      guest,
+      isEditor,
+      isOwner,
+      snapRadius,
+      points,
+      routes,
+      refresh,
+      refreshRoutes,
+    ],
+  );
   const banner =
     guest ||
     !sync.online ||
@@ -132,226 +161,218 @@ export default function MapPage() {
     state === "denied";
 
   return (
-    <div className={`mappage${banner ? " has-banner" : ""}`}>
-      <MapBanners
-        guest={guest}
-        geoState={state}
-        onEnableLocation={request}
-        online={sync.online}
-        moving={move.moving}
-        onSaveMove={move.save}
-        onCancelMove={move.cancel}
-      />
-      {!guest && (
-        <SyncBadge
+    <AdventureContext.Provider value={ctx}>
+      <div className={`mappage${banner ? " has-banner" : ""}`}>
+        <MapBanners
+          guest={guest}
+          geoState={state}
+          onEnableLocation={request}
           online={sync.online}
-          pending={sync.pending}
-          dead={sync.dead}
-          syncing={sync.syncing}
-          onSync={sync.syncNow}
+          moving={move.moving}
+          onSaveMove={move.save}
+          onCancelMove={move.cancel}
         />
-      )}
-      <MapView
-        points={points}
-        routes={routes}
-        recordingCoords={flow.recordingCoords}
-        others={[...others.values()]}
-        rotation={
-          headingUp && position?.heading != null ? -position.heading : 0
-        }
-        position={position}
-        error={error}
-        onMarkerTap={setSelected}
-        onRouteTap={setSelectedRoute}
-        onLongPress={
-          isEditor ? (lat, lng) => flow.openAdd(lat, lng, null) : undefined
-        }
-        movingId={move.moving?.id ?? null}
-        onCenterChange={move.onCenterChange}
-        flyTo={flyTo}
-      />
+        {!guest && (
+          <SyncBadge
+            online={sync.online}
+            pending={sync.pending}
+            dead={sync.dead}
+            syncing={sync.syncing}
+            onSync={sync.syncNow}
+          />
+        )}
+        <MapView
+          points={points}
+          routes={routes}
+          recordingCoords={flow.recordingCoords}
+          others={[...others.values()]}
+          rotation={
+            headingUp && position?.heading != null ? -position.heading : 0
+          }
+          position={position}
+          error={error}
+          onMarkerTap={setSelected}
+          onRouteTap={setSelectedRoute}
+          onLongPress={
+            isEditor ? (lat, lng) => flow.openAdd(lat, lng, null) : undefined
+          }
+          movingId={move.moving?.id ?? null}
+          onCenterChange={move.onCenterChange}
+          flyTo={flyTo}
+        />
 
-      {tab === "points" && (
-        <div className="panel overlay">
-          <PointsList
+        {tab === "points" && (
+          <div className="panel overlay">
+            <PointsList
+              points={points}
+              isEditor={isEditor}
+              onTap={(p) => {
+                setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() });
+                setTab("map");
+              }}
+              onMove={(p, dir) => swapSeq(id, points, p, dir)}
+              onDelete={isEditor ? onDelete : undefined}
+            />
+          </div>
+        )}
+        {tab === "routes" && (
+          <div className="panel overlay">
+            <RoutesList
+              routes={routes}
+              points={points}
+              onTap={(r) => {
+                if (r.coords.length)
+                  setFlyTo({
+                    lat: r.coords[0][1],
+                    lng: r.coords[0][0],
+                    t: Date.now(),
+                  });
+                setTab("map");
+              }}
+              onDelete={isEditor ? onRouteDelete : undefined}
+            />
+          </div>
+        )}
+        {tab === "members" && (
+          <MembersTab
+            adventureId={id}
+            others={others}
+            online={online}
+            onFly={(lat, lng) => {
+              setFlyTo({ lat, lng, t: Date.now() });
+              setTab("map");
+            }}
+          />
+        )}
+
+        {tab === "map" && (
+          <MapControls
+            showEditorFabs={isEditor && !adding && !recording && !finishing}
+            position={position}
+            onAddHere={() => {
+              if (position)
+                flow.openAdd(position.lat, position.lng, position.accuracy);
+            }}
+            onRecord={flow.openRecord}
+            onSettings={() => setSheet("settings")}
+            headingUp={headingUp}
+            onToggleHeading={() => setHeadingUp((h) => !h)}
+            onZoomToAdventure={zoomToAdventure}
+          />
+        )}
+
+        {navTarget && (
+          <NavigateHud
+            point={navTarget}
+            position={position}
+            onClose={() => setNavTarget(null)}
+          />
+        )}
+
+        {selected && !adding && (
+          <PointDetailSheet
+            point={selected}
+            position={position}
+            isEditor={isEditor}
+            onEdit={(p) => {
+              setSelected(null);
+              flow.openAdd(p.lat, p.lng, null, { initial: p });
+            }}
+            onMove={
+              isEditor
+                ? (p) => {
+                    setSelected(null);
+                    move.startMove(p);
+                  }
+                : undefined
+            }
+            onDelete={onDelete}
+            onNavigate={(p) => {
+              setNavTarget(p);
+              setSelected(null);
+            }}
+            onClose={() => setSelected(null)}
+          />
+        )}
+
+        {selectedRoute && (
+          <RouteDetailSheet
+            route={selectedRoute}
             points={points}
             isEditor={isEditor}
-            onTap={(p) => {
-              setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() });
-              setTab("map");
-            }}
-            onMove={(p, dir) => swapSeq(id, points, p, dir)}
-            onDelete={isEditor ? onDelete : undefined}
+            onUpdate={onRouteUpdate}
+            onDelete={onRouteDelete}
+            onClose={() => setSelectedRoute(null)}
           />
-        </div>
-      )}
-      {tab === "routes" && (
-        <div className="panel overlay">
-          <RoutesList
-            routes={routes}
+        )}
+
+        {recording && recorder.state === "recording" && (
+          <RecordSheet
+            state="recording"
+            mode={recorder.route?.mode}
+            waypointCount={recorder.waypointCount}
+            elapsedS={recorder.elapsedS}
+            onStart={() => {}}
+            onDrop={flow.onDrop}
+            onStop={flow.onStop}
+          />
+        )}
+        {recording && recorder.state === "idle" && (
+          <RecordSheet
+            state="idle"
+            waypointCount={0}
+            elapsedS={0}
+            onStart={flow.onStart}
+            onDrop={() => {}}
+            onStop={flow.cancelRecord}
+          />
+        )}
+
+        {finishing && !adding && (
+          <FinishRouteSheet
+            key={finishing.forceToId ?? ""}
+            route={finishing.route}
+            lastPos={finishing.lastPos}
             points={points}
-            onTap={(r) => {
-              if (r.coords.length)
-                setFlyTo({
-                  lat: r.coords[0][1],
-                  lng: r.coords[0][0],
-                  t: Date.now(),
-                });
-              setTab("map");
-            }}
-            onDelete={isEditor ? onRouteDelete : undefined}
+            snapRadiusM={snapRadius}
+            routeCount={routes.length}
+            forceToId={finishing.forceToId}
+            onSave={flow.saveRoute}
+            onNewPoint={finishing.lastPos ? flow.newEndFromFinish : undefined}
           />
-        </div>
-      )}
-      {tab === "members" && (
-        <MembersTab
-          adventureId={id}
-          others={others}
-          online={online}
-          onFly={(lat, lng) => {
-            setFlyTo({ lat, lng, t: Date.now() });
-            setTab("map");
+        )}
+
+        {adding && (
+          <AddPointSheet
+            lat={adding.lat}
+            lng={adding.lng}
+            accuracy={adding.accuracy}
+            points={points}
+            initial={adding.initial}
+            initialKind={adding.kind}
+            initialName={adding.name}
+            recording={recorder.state === "recording" && !adding.role}
+            endRouteAt={flow.endRouteAt}
+            onEndRouteAt={flow.setEndRouteAt}
+            onSave={flow.savePoint}
+            onClose={flow.closeAdd}
+          />
+        )}
+
+        <AdventureSheets
+          sheet={sheet}
+          setSheet={setSheet}
+          sharePos={sharePos}
+          onToggleShare={toggleSharePos}
+          onSaved={(snap, name) => {
+            setSnapRadius(snap);
+            if (adv) setAdv({ ...adv, name, snap_radius_m: snap });
           }}
+          onExit={exit}
         />
-      )}
 
-      {tab === "map" && (
-        <MapControls
-          showEditorFabs={isEditor && !adding && !recording && !finishing}
-          position={position}
-          onAddHere={() => {
-            if (position)
-              flow.openAdd(position.lat, position.lng, position.accuracy);
-          }}
-          onRecord={flow.openRecord}
-          onSettings={() => setSheet("settings")}
-          headingUp={headingUp}
-          onToggleHeading={() => setHeadingUp((h) => !h)}
-          onZoomToAdventure={zoomToAdventure}
-        />
-      )}
-
-      {navTarget && (
-        <NavigateHud
-          point={navTarget}
-          position={position}
-          onClose={() => setNavTarget(null)}
-        />
-      )}
-
-      {selected && !adding && (
-        <PointDetailSheet
-          point={selected}
-          position={position}
-          isEditor={isEditor}
-          onEdit={(p) => {
-            setSelected(null);
-            flow.openAdd(p.lat, p.lng, null, { initial: p });
-          }}
-          onMove={
-            isEditor
-              ? (p) => {
-                  setSelected(null);
-                  move.startMove(p);
-                }
-              : undefined
-          }
-          onDelete={onDelete}
-          onNavigate={(p) => {
-            setNavTarget(p);
-            setSelected(null);
-          }}
-          onClose={() => setSelected(null)}
-        />
-      )}
-
-      {selectedRoute && (
-        <RouteDetailSheet
-          route={selectedRoute}
-          points={points}
-          isEditor={isEditor}
-          onUpdate={onRouteUpdate}
-          onDelete={onRouteDelete}
-          onClose={() => setSelectedRoute(null)}
-        />
-      )}
-
-      {recording && recorder.state === "recording" && (
-        <RecordSheet
-          state="recording"
-          mode={recorder.route?.mode}
-          waypointCount={recorder.waypointCount}
-          elapsedS={recorder.elapsedS}
-          onStart={() => {}}
-          onDrop={flow.onDrop}
-          onStop={flow.onStop}
-        />
-      )}
-      {recording && recorder.state === "idle" && (
-        <RecordSheet
-          state="idle"
-          waypointCount={0}
-          elapsedS={0}
-          onStart={flow.onStart}
-          onDrop={() => {}}
-          onStop={flow.cancelRecord}
-        />
-      )}
-
-      {finishing && !adding && (
-        <FinishRouteSheet
-          key={finishing.forceToId ?? ""}
-          route={finishing.route}
-          lastPos={finishing.lastPos}
-          points={points}
-          snapRadiusM={snapRadius}
-          routeCount={routes.length}
-          forceToId={finishing.forceToId}
-          onSave={flow.saveRoute}
-          onNewPoint={finishing.lastPos ? flow.newEndFromFinish : undefined}
-        />
-      )}
-
-      {adding && (
-        <AddPointSheet
-          lat={adding.lat}
-          lng={adding.lng}
-          accuracy={adding.accuracy}
-          points={points}
-          initial={adding.initial}
-          initialKind={adding.kind}
-          initialName={adding.name}
-          recording={recorder.state === "recording" && !adding.role}
-          endRouteAt={flow.endRouteAt}
-          onEndRouteAt={flow.setEndRouteAt}
-          onSave={flow.savePoint}
-          onClose={flow.closeAdd}
-        />
-      )}
-
-      <AdventureSheets
-        sheet={sheet}
-        setSheet={setSheet}
-        adv={adv}
-        isOwner={isOwner}
-        isEditor={isEditor}
-        sharePos={sharePos}
-        onToggleShare={toggleSharePos}
-        onSaved={(snap, name) => {
-          setSnapRadius(snap);
-          if (adv) setAdv({ ...adv, name, snap_radius_m: snap });
-        }}
-        onExit={exit}
-        adventureId={id}
-        points={points}
-        routes={routes}
-        onRefresh={() => {
-          refresh();
-          refreshRoutes();
-        }}
-      />
-
-      <TabBar tab={tab} onChange={setTab} onExit={exit} />
-    </div>
+        <TabBar tab={tab} onChange={setTab} onExit={exit} />
+      </div>
+    </AdventureContext.Provider>
   );
 }

@@ -4,41 +4,34 @@ import GpxSheet from "@/features/gpx/GpxSheet";
 import { shareGpx } from "@/features/gpx/gpx";
 import DownloadTilesSheet from "@/features/tiles/DownloadTilesSheet";
 import { adventureBbox } from "@/features/tiles/tileMath";
-import type { Point } from "@/features/points/api";
-import type { RouteRow } from "@/features/routes/api";
-import type { AdvInfo } from "./useAdventure";
+import { useAdventureCtx } from "./AdventureContext";
 
 export type Sheet = "settings" | "share" | "gpx" | "tiles";
 
 export default function AdventureSheets({
   sheet,
   setSheet,
-  adv,
-  isOwner,
-  isEditor,
   sharePos,
   onToggleShare,
   onSaved,
   onExit,
-  adventureId,
-  points,
-  routes,
-  onRefresh,
 }: {
   sheet: Sheet | null;
   setSheet: (s: Sheet | null) => void;
-  adv: AdvInfo | null;
-  isOwner: boolean;
-  isEditor: boolean;
   sharePos: boolean;
   onToggleShare?: () => void;
   onSaved: (snap: number, name: string) => void;
   onExit: () => void;
-  adventureId: string;
-  points: Point[];
-  routes: RouteRow[];
-  onRefresh: () => void;
 }) {
+  const {
+    id: adventureId,
+    adv,
+    isOwner,
+    isEditor,
+    points,
+    routes,
+    refresh: onRefresh,
+  } = useAdventureCtx();
   return (
     <>
       {sheet === "settings" && adv && (

@@ -1,20 +1,37 @@
 import { db, type OutboxItem, type OutboxKind } from "@/lib/db";
-import {
-  deletePoint,
-  upsertPoint,
-  type PointInput,
-} from "@/features/points/api";
-import {
-  addWaypoints,
-  deleteRoute,
-  upsertRoute,
-  type RouteInput,
-  type WaypointInput,
-} from "@/features/routes/api";
-import { upsertPosition, type PositionInput } from "@/features/live/api";
 
 export const MAX_ATTEMPTS = 5;
 export const SNOOZE_MS = 60 * 60 * 1000;
+
+export interface OutboxHandler {
+  run: (payload: unknown) => Promise<unknown>;
+  reconcile?: (payload: unknown, result: unknown) => Promise<void>;
+  refs?: string[];
+  latestWins?: boolean;
+}
+
+const handlers = new Map<OutboxKind, OutboxHandler>();
+
+export function registerOutboxHandler(
+  kind: OutboxKind,
+  h: OutboxHandler,
+): void {
+  handlers.set(kind, h);
+}
+
+export async function rewriteIds(from: string, to: string): Promise<void> {
+  for (const i of await db.outbox.toArray()) {
+    const pl = i.payload as Record<string, unknown>;
+    let changed = false;
+    for (const k of handlers.get(i.kind)?.refs ?? []) {
+      if (pl[k] === from) {
+        pl[k] = to;
+        changed = true;
+      }
+    }
+    if (changed) await db.outbox.update(i.id!, { payload: pl });
+  }
+}
 
 export async function snooze(id: number) {
   await db.outbox.update(id, {
@@ -26,7 +43,7 @@ export async function snooze(id: number) {
 let drainScheduled = false;
 
 export async function enqueue(kind: OutboxKind, payload: unknown) {
-  if (kind === "upsert_position")
+  if (handlers.get(kind)?.latestWins)
     await db.outbox.where("kind").equals(kind).delete();
   await db.outbox.add({
     kind,
@@ -52,24 +69,9 @@ function isNetworkError(e: unknown): boolean {
 }
 
 async function run(item: OutboxItem): Promise<unknown> {
-  const p = item.payload as Record<string, unknown>;
-  switch (item.kind) {
-    case "upsert_point":
-      return upsertPoint(p as unknown as PointInput);
-    case "delete_point":
-      return deletePoint(p.id as string);
-    case "upsert_route":
-      return upsertRoute(p as unknown as RouteInput);
-    case "add_waypoints":
-      return addWaypoints(
-        p.route_client_id as string,
-        p.wps as WaypointInput[],
-      );
-    case "delete_route":
-      return deleteRoute(p.id as string);
-    case "upsert_position":
-      return upsertPosition(p as unknown as PositionInput);
-  }
+  const h = handlers.get(item.kind);
+  if (!h) throw new Error(`no handler: ${item.kind}`);
+  return h.run(item.payload);
 }
 
 export interface DrainResult {
@@ -110,7 +112,7 @@ async function drainLoop(): Promise<DrainResult> {
       const result = await run(item);
       await db.outbox.delete(item.id!);
       res.done++;
-      await reconcile(item, result);
+      await handlers.get(item.kind)?.reconcile?.(item.payload, result);
     } catch (e) {
       const err =
         (e as { message?: string })?.message ??
@@ -131,72 +133,6 @@ async function drainLoop(): Promise<DrainResult> {
     }
   }
   return res;
-}
-
-async function reconcile(item: OutboxItem, result: unknown) {
-  if (item.kind === "add_waypoints") {
-    const p = item.payload as {
-      route_client_id: string;
-      wps: { seq: number; lat: number; lng: number }[];
-    };
-    const route = await db.routes
-      .where("client_id")
-      .equals(p.route_client_id)
-      .first();
-    if (route) {
-      const coords = (route.coords ?? []) as [number, number][];
-      for (const w of p.wps) coords[w.seq - 1] = [w.lng, w.lat];
-      await db.routes.update(route.id, { coords });
-    }
-    return;
-  }
-  const row = result as Record<string, unknown> | null;
-  if (!row?.id) return;
-  if (item.kind === "upsert_point") {
-    const clientId = (item.payload as Record<string, unknown>)
-      .client_id as string;
-    const existing = await db.points
-      .where("client_id")
-      .equals(clientId)
-      .first();
-    if (existing && existing.id !== row.id) await db.points.delete(existing.id);
-    await db.points.put(row as unknown as Parameters<typeof db.points.put>[0]);
-    const serverId = row.id as string;
-    const remaining = await db.outbox.toArray();
-    for (const i of remaining) {
-      const pl = i.payload as Record<string, unknown>;
-      let changed = false;
-      for (const k of ["from_point_id", "to_point_id", "id"]) {
-        if (pl[k] === clientId) {
-          pl[k] = serverId;
-          changed = true;
-        }
-      }
-      if (changed) await db.outbox.update(i.id!, { payload: pl });
-    }
-  }
-  if (item.kind === "upsert_route") {
-    const clientId = (item.payload as Record<string, unknown>)
-      .client_id as string;
-    const existing = await db.routes
-      .where("client_id")
-      .equals(clientId)
-      .first();
-    if (existing) {
-      await db.routes.delete(existing.id);
-      await db.routes.put({
-        ...existing,
-        id: row.id as string,
-        name: row.name as string,
-        direction: row.direction as string,
-        ended_at: row.ended_at as string | null,
-      });
-    }
-  }
-}
-
-export async function enqueuePosition(payload: PositionInput) {
-  await enqueue("upsert_position", payload);
 }
 
 export async function pendingCount(): Promise<number> {

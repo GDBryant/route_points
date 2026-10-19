@@ -34,10 +34,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-vi.mock("@/features/sync/outbox", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/features/sync/outbox")>();
-  return { ...mod, enqueuePosition: vi.fn() };
-});
+vi.mock("@/features/live/sync", () => ({ enqueuePosition: vi.fn() }));
 
 const pos = {
   lat: -33.5,

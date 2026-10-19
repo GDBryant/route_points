@@ -1,40 +1,34 @@
 import { db } from "@/lib/db";
+import { defineEntity } from "@/lib/entity";
 import { enqueue } from "@/features/sync/outbox";
-import { listPoints, type Point, type PointInput } from "./api";
+import {
+  listPoints,
+  listPointsByToken,
+  subscribePoints,
+  type Point,
+  type PointInput,
+} from "./api";
 import type { PointFormInput } from "./AddPointSheet";
+import "./sync";
 
-export async function syncPointsFromServer(adventureId: string) {
-  const remote = await listPoints(adventureId);
-  await db.transaction("rw", db.points, db.outbox, async () => {
-    const local = await db.points
-      .where("adventure_id")
-      .equals(adventureId)
-      .toArray();
-    const items = await db.outbox.toArray();
-    const pendingClientIds = new Set(
-      items
-        .filter((i) => i.kind === "upsert_point")
-        .map((i) => (i.payload as { client_id: string }).client_id),
-    );
-    const pendingDeleteIds = new Set(
-      items
-        .filter((i) => i.kind === "delete_point")
-        .map((i) => (i.payload as { id: string }).id),
-    );
-    const live = remote.filter((p) => !pendingDeleteIds.has(p.id));
-    const remoteIds = new Set(live.map((p) => p.id));
-    for (const p of local) {
-      if (
-        !remoteIds.has(p.id) &&
-        !(p.client_id && pendingClientIds.has(p.client_id))
-      )
-        await db.points.delete(p.id);
+export const pointEntity = defineEntity<Point>({
+  table: db.points,
+  kindUpsert: "upsert_point",
+  kindDelete: "delete_point",
+  list: listPoints,
+  listByToken: listPointsByToken,
+  subscribe: (id, cb) => subscribePoints(id, cb),
+  applyEvent: async (adventureId, e) => {
+    if (e.eventType === "DELETE") {
+      if (e.old) await db.points.delete(e.old.id);
+    } else {
+      await db.points.put({ ...(e.new as Point), adventure_id: adventureId });
     }
-    await db.points.bulkPut(
-      live.map((p) => ({ ...p, adventure_id: adventureId })),
-    );
-  });
-}
+  },
+});
+
+export const syncPointsFromServer = pointEntity.syncFromServer;
+export const removePoint = pointEntity.remove;
 
 export const pointInput = (
   p: Point,
@@ -102,17 +96,4 @@ export async function savePointLocal(
   };
   await enqueue("upsert_point", payload);
   return point;
-}
-
-export async function removePoint(point: Point) {
-  await db.points.delete(point.id);
-  const items = await db.outbox.toArray();
-  for (const i of items) {
-    if (
-      i.kind === "upsert_point" &&
-      (i.payload as { client_id: string }).client_id === point.client_id
-    )
-      await db.outbox.delete(i.id!);
-  }
-  await enqueue("delete_point", { id: point.id });
 }
