@@ -18,6 +18,13 @@ import MemberMarker from "@/features/live/MemberMarker";
 import type { LivePos } from "@/features/live/usePositions";
 import { Polyline } from "react-leaflet";
 
+export type FlyTarget = {
+  lat: number;
+  lng: number;
+  t: number;
+  bounds?: [[number, number], [number, number]];
+};
+
 const DEFAULT_CENTER: [number, number] = [-33.56, 18.48];
 const ESRI_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -99,12 +106,7 @@ function FlyTo({
   target,
   onFly,
 }: {
-  target: {
-    lat: number;
-    lng: number;
-    t: number;
-    bounds?: [[number, number], [number, number]];
-  } | null;
+  target: FlyTarget | null;
   onFly: () => void;
 }) {
   const map = useMap();
@@ -142,12 +144,7 @@ export default function MapView({
   onLongPress?: (lat: number, lng: number) => void;
   movingId?: string | null;
   onCenterChange?: (lat: number, lng: number) => void;
-  flyTo?: {
-    lat: number;
-    lng: number;
-    t: number;
-    bounds?: [[number, number], [number, number]];
-  } | null;
+  flyTo?: FlyTarget | null;
   position?: GeoPosition | null;
   error?: string | null;
 }) {

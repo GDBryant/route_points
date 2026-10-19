@@ -87,6 +87,10 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 - Start: recording begins immediately; if no point within 50 m (`START_PROMPT_M`, independent of snap radius) open AddPointSheet kind `start`, name `Start`; on save set `from_point_id`. Cancel → no from point.
 - Stop: if no own point within snap radius, open AddPointSheet kind `end` before Finish sheet. Name = nearest named OSM feature within 200 m (Overpass, then Nominatim reverse fallback, 5 s timeout), else `End`. Offline → silent `End`. Then Finish sheet with `to` = that point, route name `From → To`.
 
+## Architecture refactor (2026-10-19)
+
+See `architecture.md` — 5 phases, status table at top. Phase 1 done (v0.3.2).
+
 ## Open questions
 
 - None outstanding.

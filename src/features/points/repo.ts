@@ -36,6 +36,39 @@ export async function syncPointsFromServer(adventureId: string) {
   });
 }
 
+export const pointInput = (
+  p: Point,
+  o: Partial<PointFormInput & { lat: number; lng: number }> = {},
+) => ({
+  name: p.name,
+  kind: p.kind,
+  note: p.note ?? "",
+  seq: p.seq,
+  accuracy_m: null,
+  lat: p.lat,
+  lng: p.lng,
+  client_id: p.client_id,
+  ...o,
+});
+
+export async function swapSeq(
+  adventureId: string,
+  points: Point[],
+  p: Point,
+  dir: -1 | 1,
+) {
+  const sorted = [...points].sort(
+    (a, b) => (a.seq ?? 9999) - (b.seq ?? 9999) || a.name.localeCompare(b.name),
+  );
+  const i = sorted.findIndex((x) => x.id === p.id);
+  const other = sorted[i + dir];
+  if (!other) return;
+  const seqA = p.seq ?? i + 1;
+  const seqB = other.seq ?? i + 1 + dir;
+  await savePointLocal(adventureId, pointInput(p, { seq: seqB }));
+  await savePointLocal(adventureId, pointInput(other, { seq: seqA }));
+}
+
 export async function savePointLocal(
   adventureId: string,
   input: PointFormInput & { lat: number; lng: number },

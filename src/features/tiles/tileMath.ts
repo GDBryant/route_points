@@ -46,6 +46,29 @@ export function tileUrl(layer: Layer, t: { x: number; y: number; z: number }) {
     .replace("{y}", String(t.y));
 }
 
+export function boundsOf(
+  points: { lat: number; lng: number }[],
+  routes: { coords: [number, number][] }[],
+  position?: { lat: number; lng: number } | null,
+) {
+  const coords = [
+    ...points.map((p) => ({ lat: p.lat, lng: p.lng })),
+    ...routes.flatMap((r) => r.coords.map(([lng, lat]) => ({ lat, lng }))),
+  ];
+  if (position) coords.push({ lat: position.lat, lng: position.lng });
+  if (!coords.length) return null;
+  const lats = coords.map((c) => c.lat);
+  const lngs = coords.map((c) => c.lng);
+  return {
+    lat: Math.min(...lats),
+    lng: Math.min(...lngs),
+    bounds: [
+      [Math.min(...lats), Math.min(...lngs)],
+      [Math.max(...lats), Math.max(...lngs)],
+    ] as [[number, number], [number, number]],
+  };
+}
+
 export function adventureBbox(
   coords: { lat: number; lng: number }[],
   fallback?: { lat: number; lng: number },

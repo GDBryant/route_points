@@ -1,23 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import MapView from "./MapView";
+import MapView, { type FlyTarget } from "./MapView";
+import MapBanners from "./MapBanners";
+import MapControls from "./MapControls";
+import MembersTab from "./MembersTab";
+import TabBar, { type Tab } from "./TabBar";
+import AdventureSheets, { type Sheet } from "./AdventureSheets";
+import { useAdventure } from "./useAdventure";
+import { useMovePoint } from "./useMovePoint";
+import { useRecordingFlow } from "./useRecordingFlow";
 import { useGeolocation } from "@/features/tracking/useGeolocation";
-import {
-  getAdventure,
-  listMembers,
-  myRole,
-  touchAdventure,
-  type Member,
-} from "@/features/adventures/api";
-import AdventureSettingsSheet from "@/features/adventures/AdventureSettingsSheet";
-import ShareSheet from "@/features/adventures/ShareSheet";
 import { useAuth } from "@/features/auth/useAuth";
 import { usePoints } from "@/features/points/usePoints";
-import { savePointLocal, removePoint } from "@/features/points/repo";
+import { removePoint, swapSeq } from "@/features/points/repo";
 import type { Point } from "@/features/points/api";
-import AddPointSheet, {
-  type PointFormInput,
-} from "@/features/points/AddPointSheet";
+import AddPointSheet from "@/features/points/AddPointSheet";
 import PointDetailSheet from "@/features/points/PointDetailSheet";
 import PointsList from "@/features/points/PointsList";
 import { useRoutes } from "@/features/routes/useRoutes";
@@ -27,45 +24,24 @@ import { useSync } from "@/features/sync/useSync";
 import SyncBadge from "@/features/sync/SyncBadge";
 import { usePositions } from "@/features/live/usePositions";
 import NavigateHud from "@/features/live/NavigateHud";
-import { useAuth as useAuthCtx } from "@/features/auth/useAuth";
-import { useRecorder, type PendingRoute } from "@/features/routes/useRecorder";
-import { nearestPoint, START_PROMPT_M } from "@/features/routes/snap";
-import { nearbyOsmName } from "@/features/points/osmName";
 import RecordSheet from "@/features/routes/RecordSheet";
-import FinishRouteSheet, {
-  type FinishInput,
-} from "@/features/routes/FinishRouteSheet";
+import FinishRouteSheet from "@/features/routes/FinishRouteSheet";
 import RouteDetailSheet, {
   type RoutePatch,
 } from "@/features/routes/RouteDetailSheet";
 import RoutesList from "@/features/routes/RoutesList";
-import type { GeoPosition } from "@/features/tracking/useGeolocation";
-import DownloadTilesSheet from "@/features/tiles/DownloadTilesSheet";
-import { adventureBbox } from "@/features/tiles/tileMath";
-import GpxSheet from "@/features/gpx/GpxSheet";
-import { toGpx } from "@/features/gpx/gpx";
-
-type Tab = "map" | "points" | "routes" | "members";
+import { boundsOf } from "@/features/tiles/tileMath";
 
 export default function MapPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { user } = useAuth();
-  const { profile } = useAuthCtx();
+  const { user, profile } = useAuth();
   const token = params.get("token");
-  const guest = !user && !!token;
+  const { guest, adv, setAdv, isEditor, isOwner, snapRadius, setSnapRadius } =
+    useAdventure({ id, token, user });
   const exit = () => navigate(guest ? "/" : "/adventures");
   const { position, error, state, request } = useGeolocation();
-
-  const [role, setRole] = useState<string | null>(null);
-  const [snapRadius, setSnapRadius] = useState(20);
-  const [adv, setAdv] = useState<{
-    id: string;
-    name: string;
-    snap_radius_m: number;
-    share_token: string;
-  } | null>(null);
   const { points, refresh } = usePoints(
     guest ? { token: token! } : { adventureId: id },
   );
@@ -73,49 +49,25 @@ export default function MapPage() {
     guest ? { token: token! } : { adventureId: id },
   );
   const [tab, setTab] = useState<Tab>("map");
-  const [members, setMembers] = useState<Member[]>([]);
-  const [adding, setAdding] = useState<{
-    lat: number;
-    lng: number;
-    accuracy: number | null;
-    initial?: Point;
-    kind?: string;
-    role?: "start" | "turn" | "end";
-    name?: string;
-  } | null>(null);
   const [selected, setSelected] = useState<Point | null>(null);
-  const [moving, setMoving] = useState<Point | null>(null);
-  const [moveTo, setMoveTo] = useState<{ lat: number; lng: number } | null>(
-    null,
-  );
   const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
-  const [flyTo, setFlyTo] = useState<{
-    lat: number;
-    lng: number;
-    t: number;
-    bounds?: [[number, number], [number, number]];
-  } | null>(null);
-  const [recording, setRecording] = useState(false);
-  const [endRouteAt, setEndRouteAt] = useState(false);
-  const [newEnd, setNewEnd] = useState(false);
-  const [finishing, setFinishing] = useState<{
-    route: PendingRoute;
-    lastPos: GeoPosition | null;
-    forceToId?: string;
-  } | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const [showTiles, setShowTiles] = useState(false);
-  const [showGpx, setShowGpx] = useState(false);
+  const [flyTo, setFlyTo] = useState<FlyTarget | null>(null);
+  const [sheet, setSheet] = useState<Sheet | null>(null);
   const [headingUp, setHeadingUp] = useState(false);
   const [navTarget, setNavTarget] = useState<Point | null>(null);
   const [sharePos, setSharePos] = useState(
     () => localStorage.getItem("sharePos") !== "off",
   );
 
-  const isEditor = !guest && (role === "owner" || role === "editor");
-  const isOwner = role === "owner";
-  const recorder = useRecorder(position, points, snapRadius);
+  const move = useMovePoint({ adventureId: id, setFlyTo, refresh });
+  const flow = useRecordingFlow({
+    adventureId: id,
+    position,
+    points,
+    snapRadius,
+    refreshPoints: refresh,
+    refreshRoutes,
+  });
   const sync = useSync();
   const self =
     user && profile
@@ -133,137 +85,9 @@ export default function MapPage() {
     position,
   });
 
-  useEffect(() => {
-    if (user && id) {
-      touchAdventure(id);
-      myRole(id).then(setRole);
-      getAdventure(id)
-        .then((a) => {
-          setAdv(a);
-          setSnapRadius(a.snap_radius_m);
-        })
-        .catch(() => {});
-    }
-  }, [user, id]);
-
-  useEffect(() => {
-    if (tab === "members" && user && id)
-      listMembers(id)
-        .then(setMembers)
-        .catch(() => {});
-  }, [tab, user, id]);
-
-  const savePoint = async (input: PointFormInput) => {
-    if (!adding) return;
-    const saved = await savePointLocal(id, {
-      ...input,
-      lat: adding.lat,
-      lng: adding.lng,
-    });
-    const wasEnd = endRouteAt;
-    setAdding(null);
-    setEndRouteAt(false);
-    refresh();
-    if (adding.role === "start" && saved?.id) {
-      recorder.setFromPoint(saved.id);
-      const r = recorder.route;
-      if (r)
-        await saveRouteLocal({
-          adventure_id: id,
-          client_id: r.client_id,
-          mode: r.mode,
-          interval_s: r.interval_s,
-          started_at: r.started_at,
-          from_point_id: saved.id,
-        }).catch(() => {});
-    } else if (newEnd && finishing && saved?.id) {
-      setNewEnd(false);
-      setFinishing({ ...finishing, forceToId: saved.id });
-    } else if (wasEnd && saved?.id) {
-      const res = await recorder.stop();
-      if (res.route)
-        setFinishing({ ...res, route: res.route, forceToId: saved.id });
-    }
-  };
-
-  const onLongPress = (lat: number, lng: number) => {
-    if (isEditor) setAdding({ lat, lng, accuracy: null });
-  };
-
-  const startMove = (p: Point) => {
-    setSelected(null);
-    setMoving(p);
-    setMoveTo({ lat: p.lat, lng: p.lng });
-    setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() });
-  };
-
-  const onMoveCenter = useCallback(
-    (lat: number, lng: number) => setMoveTo({ lat, lng }),
-    [],
-  );
-
-  const onMoved = async (p: Point, lat: number, lng: number) => {
-    await savePointLocal(id, {
-      name: p.name,
-      kind: p.kind,
-      note: p.note ?? "",
-      seq: p.seq,
-      accuracy_m: null,
-      lat,
-      lng,
-      client_id: p.client_id,
-    });
-    setMoving(null);
-    setMoveTo(null);
-    refresh();
-  };
-
   const onDelete = async (p: Point) => {
     await removePoint(p);
     setSelected(null);
-  };
-
-  const onStopRecord = async () => {
-    const res = await recorder.stop();
-    if (
-      res.route &&
-      res.lastPos &&
-      !nearestPoint(res.lastPos, points, snapRadius)
-    ) {
-      const name = await nearbyOsmName(res.lastPos.lat, res.lastPos.lng);
-      setFinishing({ ...res, route: res.route });
-      setNewEnd(true);
-      setAdding({
-        lat: res.lastPos.lat,
-        lng: res.lastPos.lng,
-        accuracy: res.lastPos.accuracy,
-        kind: "end",
-        role: "end",
-        name: name ?? undefined,
-      });
-    } else if (res.route) setFinishing({ ...res, route: res.route });
-    else recorder.finishDone();
-  };
-
-  const saveRoute = async (input: FinishInput) => {
-    if (!finishing) return;
-    await saveRouteLocal({
-      adventure_id: id,
-      client_id: finishing.route.client_id,
-      name: input.name,
-      from_point_id: input.from_point_id,
-      to_point_id: input.to_point_id,
-      direction: input.direction,
-      mode: finishing.route.mode,
-      interval_s: finishing.route.interval_s,
-      started_at: finishing.route.started_at,
-      ended_at: new Date().toISOString(),
-      coords: recorder.pendingCoords,
-    });
-    setFinishing(null);
-    setRecording(false);
-    recorder.finishDone();
-    refreshRoutes();
   };
 
   const onRouteUpdate = async (r: RouteRow, patch: RoutePatch) => {
@@ -289,23 +113,8 @@ export default function MapPage() {
   };
 
   const zoomToAdventure = () => {
-    const coords = [
-      ...points.map((p) => ({ lat: p.lat, lng: p.lng })),
-      ...routes.flatMap((r) => r.coords.map(([lng, lat]) => ({ lat, lng }))),
-    ];
-    if (position) coords.push({ lat: position.lat, lng: position.lng });
-    if (!coords.length) return;
-    const lats = coords.map((c) => c.lat);
-    const lngs = coords.map((c) => c.lng);
-    setFlyTo({
-      lat: Math.min(...lats),
-      lng: Math.min(...lngs),
-      bounds: [
-        [Math.min(...lats), Math.min(...lngs)],
-        [Math.max(...lats), Math.max(...lngs)],
-      ],
-      t: Date.now(),
-    });
+    const b = boundsOf(points, routes, position);
+    if (b) setFlyTo({ ...b, t: Date.now() });
   };
 
   const toggleSharePos = () => {
@@ -314,71 +123,25 @@ export default function MapPage() {
     localStorage.setItem("sharePos", next ? "on" : "off");
   };
 
-  const exportGpx = async () => {
-    const xml = toGpx({ name: adv?.name ?? "adventure" }, points, routes);
-    const file = new File([xml], `${adv?.name ?? "adventure"}.gpx`, {
-      type: "application/gpx+xml",
-    });
-    const nav = navigator as Navigator & {
-      canShare?: (d: { files: File[] }) => boolean;
-    };
-    if (nav.canShare?.({ files: [file] }))
-      await navigator.share({ files: [file] }).catch(() => {});
-    else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(file);
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-    setShowSettings(false);
-  };
-
-  const recordingCoords = recorder.pendingCoords.map(
-    ([lng, lat]) => ({ lat, lng }) as const,
-  );
+  const { adding, finishing, recorder, recording } = flow;
+  const banner =
+    guest ||
+    !sync.online ||
+    !!move.moving ||
+    state === "prompt" ||
+    state === "denied";
 
   return (
-    <div
-      className={`mappage${guest || !sync.online || moving || state === "prompt" || state === "denied" ? " has-banner" : ""}`}
-    >
-      {guest && <div className="banner">Viewing as guest</div>}
-      {state === "prompt" && (
-        <div className="banner">
-          Location is off
-          <button className="linklike" onClick={request}>
-            Enable location
-          </button>
-        </div>
-      )}
-      {state === "denied" && (
-        <div className="banner">
-          Location blocked — allow it in your browser's site settings
-        </div>
-      )}
-      {!sync.online && (
-        <div className="banner offline">Offline — changes will sync</div>
-      )}
-      {moving && (
-        <div className="banner">
-          Pan map to position “{moving.name}”
-          <button
-            className="linklike"
-            onClick={() => moveTo && onMoved(moving, moveTo.lat, moveTo.lng)}
-          >
-            Save
-          </button>
-          <button
-            className="linklike"
-            onClick={() => {
-              setMoving(null);
-              setMoveTo(null);
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+    <div className={`mappage${banner ? " has-banner" : ""}`}>
+      <MapBanners
+        guest={guest}
+        geoState={state}
+        onEnableLocation={request}
+        online={sync.online}
+        moving={move.moving}
+        onSaveMove={move.save}
+        onCancelMove={move.cancel}
+      />
       {!guest && (
         <SyncBadge
           online={sync.online}
@@ -391,7 +154,7 @@ export default function MapPage() {
       <MapView
         points={points}
         routes={routes}
-        recordingCoords={recordingCoords}
+        recordingCoords={flow.recordingCoords}
         others={[...others.values()]}
         rotation={
           headingUp && position?.heading != null ? -position.heading : 0
@@ -400,9 +163,11 @@ export default function MapPage() {
         error={error}
         onMarkerTap={setSelected}
         onRouteTap={setSelectedRoute}
-        onLongPress={isEditor ? onLongPress : undefined}
-        movingId={moving?.id ?? null}
-        onCenterChange={onMoveCenter}
+        onLongPress={
+          isEditor ? (lat, lng) => flow.openAdd(lat, lng, null) : undefined
+        }
+        movingId={move.moving?.id ?? null}
+        onCenterChange={move.onCenterChange}
         flyTo={flyTo}
       />
 
@@ -415,38 +180,7 @@ export default function MapPage() {
               setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() });
               setTab("map");
             }}
-            onMove={(p, dir) => {
-              const sorted = [...points].sort(
-                (a, b) =>
-                  (a.seq ?? 9999) - (b.seq ?? 9999) ||
-                  a.name.localeCompare(b.name),
-              );
-              const i = sorted.findIndex((x) => x.id === p.id);
-              const other = sorted[i + dir];
-              if (!other) return;
-              const seqA = p.seq ?? i + 1;
-              const seqB = other.seq ?? i + 1 + dir;
-              savePointLocal(id, {
-                name: p.name,
-                kind: p.kind,
-                note: p.note ?? "",
-                seq: seqB,
-                accuracy_m: null,
-                lat: p.lat,
-                lng: p.lng,
-                client_id: p.client_id,
-              });
-              savePointLocal(id, {
-                name: other.name,
-                kind: other.kind,
-                note: other.note ?? "",
-                seq: seqA,
-                accuracy_m: null,
-                lat: other.lat,
-                lng: other.lng,
-                client_id: other.client_id,
-              });
-            }}
+            onMove={(p, dir) => swapSeq(id, points, p, dir)}
             onDelete={isEditor ? onDelete : undefined}
           />
         </div>
@@ -470,75 +204,31 @@ export default function MapPage() {
         </div>
       )}
       {tab === "members" && (
-        <div className="panel overlay">
-          <ul className="list">
-            {members.map((m) => (
-              <li key={m.user_id} className="card">
-                <button
-                  className="linklike"
-                  onClick={() => {
-                    const o = others.get(m.user_id);
-                    if (o) {
-                      setFlyTo({ lat: o.lat, lng: o.lng, t: Date.now() });
-                      setTab("map");
-                    }
-                  }}
-                >
-                  <span className="dot" style={{ background: m.colour }} />
-                  <strong>{m.display_name || "Member"}</strong>
-                  <span className="muted">{m.role}</span>
-                  {online.has(m.user_id) && (
-                    <span className="dot-online">●</span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <MembersTab
+          adventureId={id}
+          others={others}
+          online={online}
+          onFly={(lat, lng) => {
+            setFlyTo({ lat, lng, t: Date.now() });
+            setTab("map");
+          }}
+        />
       )}
 
-      {isEditor && tab === "map" && !adding && !recording && !finishing && (
-        <>
-          <button
-            className="fab"
-            disabled={!position}
-            title={position ? undefined : "Waiting for GPS"}
-            onClick={() => {
-              if (position)
-                setAdding({
-                  lat: position.lat,
-                  lng: position.lng,
-                  accuracy: position.accuracy,
-                });
-            }}
-          >
-            + Point
-          </button>
-          <button className="fab fab2" onClick={() => setRecording(true)}>
-            Record
-          </button>
-          <button className="gear" onClick={() => setShowSettings(true)}>
-            ⚙
-          </button>
-        </>
-      )}
       {tab === "map" && (
-        <>
-          <button
-            className={`compass-btn${headingUp ? " active" : ""}`}
-            title="Heading up"
-            onClick={() => setHeadingUp((h) => !h)}
-          >
-            🧭
-          </button>
-          <button
-            className="zoomadv-btn"
-            title="Zoom to adventure"
-            onClick={zoomToAdventure}
-          >
-            ⛶
-          </button>
-        </>
+        <MapControls
+          showEditorFabs={isEditor && !adding && !recording && !finishing}
+          position={position}
+          onAddHere={() => {
+            if (position)
+              flow.openAdd(position.lat, position.lng, position.accuracy);
+          }}
+          onRecord={flow.openRecord}
+          onSettings={() => setSheet("settings")}
+          headingUp={headingUp}
+          onToggleHeading={() => setHeadingUp((h) => !h)}
+          onZoomToAdventure={zoomToAdventure}
+        />
       )}
 
       {navTarget && (
@@ -556,9 +246,16 @@ export default function MapPage() {
           isEditor={isEditor}
           onEdit={(p) => {
             setSelected(null);
-            setAdding({ lat: p.lat, lng: p.lng, accuracy: null, initial: p });
+            flow.openAdd(p.lat, p.lng, null, { initial: p });
           }}
-          onMove={isEditor ? startMove : undefined}
+          onMove={
+            isEditor
+              ? (p) => {
+                  setSelected(null);
+                  move.startMove(p);
+                }
+              : undefined
+          }
           onDelete={onDelete}
           onNavigate={(p) => {
             setNavTarget(p);
@@ -586,17 +283,8 @@ export default function MapPage() {
           waypointCount={recorder.waypointCount}
           elapsedS={recorder.elapsedS}
           onStart={() => {}}
-          onDrop={() => {
-            if (recorder.dropWaypoint() && position)
-              setAdding({
-                lat: position.lat,
-                lng: position.lng,
-                accuracy: position.accuracy,
-                kind: "turn",
-                role: "turn",
-              });
-          }}
-          onStop={onStopRecord}
+          onDrop={flow.onDrop}
+          onStop={flow.onStop}
         />
       )}
       {recording && recorder.state === "idle" && (
@@ -604,28 +292,9 @@ export default function MapPage() {
           state="idle"
           waypointCount={0}
           elapsedS={0}
-          onStart={async (mode, s) => {
-            const r = recorder.start(mode, s);
-            if (r)
-              await saveRouteLocal({
-                adventure_id: id,
-                client_id: r.client_id,
-                mode: r.mode,
-                interval_s: r.interval_s,
-                started_at: r.started_at,
-                from_point_id: r.from_point_id,
-              }).catch(() => {});
-            if (position && !nearestPoint(position, points, START_PROMPT_M))
-              setAdding({
-                lat: position.lat,
-                lng: position.lng,
-                accuracy: position.accuracy,
-                kind: "start",
-                role: "start",
-              });
-          }}
+          onStart={flow.onStart}
           onDrop={() => {}}
-          onStop={() => setRecording(false)}
+          onStop={flow.cancelRecord}
         />
       )}
 
@@ -638,19 +307,8 @@ export default function MapPage() {
           snapRadiusM={snapRadius}
           routeCount={routes.length}
           forceToId={finishing.forceToId}
-          onSave={saveRoute}
-          onNewPoint={
-            finishing.lastPos
-              ? () => {
-                  setNewEnd(true);
-                  setAdding({
-                    lat: finishing.lastPos!.lat,
-                    lng: finishing.lastPos!.lng,
-                    accuracy: finishing.lastPos!.accuracy,
-                  });
-                }
-              : undefined
-          }
+          onSave={flow.saveRoute}
+          onNewPoint={finishing.lastPos ? flow.newEndFromFinish : undefined}
         />
       )}
 
@@ -664,100 +322,36 @@ export default function MapPage() {
           initialKind={adding.kind}
           initialName={adding.name}
           recording={recorder.state === "recording" && !adding.role}
-          endRouteAt={endRouteAt}
-          onEndRouteAt={setEndRouteAt}
-          onSave={savePoint}
-          onClose={() => {
-            setAdding(null);
-            setNewEnd(false);
-          }}
+          endRouteAt={flow.endRouteAt}
+          onEndRouteAt={flow.setEndRouteAt}
+          onSave={flow.savePoint}
+          onClose={flow.closeAdd}
         />
       )}
 
-      {showSettings && adv && (
-        <AdventureSettingsSheet
-          adventure={adv}
-          isOwner={isOwner}
-          onSaved={(snap, name) => {
-            setSnapRadius(snap);
-            setAdv({ ...adv, name, snap_radius_m: snap });
-          }}
-          sharePos={sharePos}
-          onToggleShare={isEditor ? toggleSharePos : undefined}
-          onExportGpx={() => exportGpx()}
-          onImportGpx={
-            isEditor
-              ? () => {
-                  setShowSettings(false);
-                  setShowGpx(true);
-                }
-              : undefined
-          }
-          onShare={() => {
-            setShowSettings(false);
-            setShowShare(true);
-          }}
-          onOfflineMaps={() => {
-            setShowSettings(false);
-            setShowTiles(true);
-          }}
-          onExit={exit}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
+      <AdventureSheets
+        sheet={sheet}
+        setSheet={setSheet}
+        adv={adv}
+        isOwner={isOwner}
+        isEditor={isEditor}
+        sharePos={sharePos}
+        onToggleShare={toggleSharePos}
+        onSaved={(snap, name) => {
+          setSnapRadius(snap);
+          if (adv) setAdv({ ...adv, name, snap_radius_m: snap });
+        }}
+        onExit={exit}
+        adventureId={id}
+        points={points}
+        routes={routes}
+        onRefresh={() => {
+          refresh();
+          refreshRoutes();
+        }}
+      />
 
-      {showShare && adv && (
-        <ShareSheet
-          token={adv.share_token}
-          name={adv.name}
-          onClose={() => setShowShare(false)}
-        />
-      )}
-
-      {showGpx && (
-        <GpxSheet
-          adventureId={id}
-          isEditor={isEditor}
-          onClose={() => setShowGpx(false)}
-          onDone={() => {
-            refresh();
-            refreshRoutes();
-          }}
-        />
-      )}
-
-      {showTiles && (
-        <DownloadTilesSheet
-          adventureId={id}
-          bbox={adventureBbox([
-            ...points,
-            ...routes.flatMap((r) =>
-              r.coords.map(([lng, lat]) => ({ lat, lng })),
-            ),
-          ])}
-          onClose={() => setShowTiles(false)}
-        />
-      )}
-
-      <nav className="tabbar">
-        {(["map", "points", "routes", "members"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            className={tab === t ? "tab active" : "tab"}
-            onClick={() => setTab(t)}
-          >
-            {t[0].toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-        <button
-          className="tab exit"
-          title="Exit adventure"
-          aria-label="Exit adventure"
-          onClick={exit}
-        >
-          ⎋
-        </button>
-      </nav>
+      <TabBar tab={tab} onChange={setTab} onExit={exit} />
     </div>
   );
 }

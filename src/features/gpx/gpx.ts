@@ -48,6 +48,27 @@ ${trks}
 `;
 }
 
+export async function shareGpx(
+  name: string,
+  points: Point[],
+  routes: RouteRow[],
+) {
+  const xml = toGpx({ name }, points, routes);
+  const file = new File([xml], `${name}.gpx`, { type: "application/gpx+xml" });
+  const nav = navigator as Navigator & {
+    canShare?: (d: { files: File[] }) => boolean;
+  };
+  if (nav.canShare?.({ files: [file] }))
+    await navigator.share({ files: [file] }).catch(() => {});
+  else {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+}
+
 export interface GpxRoute {
   route: RouteInput;
   waypoints: WaypointInput[];

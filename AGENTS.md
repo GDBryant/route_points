@@ -30,4 +30,4 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 
 - `src/` app, `src/features/{auth,adventures,points,routes,map,tracking,sync}`
 - `supabase/` migrations, RLS policies
-- `docs/ai_docs/` plan, decisions, progress
+- `docs/ai_docs/` plan, architecture (refactor phases + status), decisions, progress
