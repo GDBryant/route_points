@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface GeoPosition {
   lat: number;
@@ -8,30 +8,99 @@ export interface GeoPosition {
   speed: number | null;
 }
 
+export type GeoState =
+  | "checking"
+  | "unsupported"
+  | "prompt"
+  | "denied"
+  | "watching";
+
+const KEY = "geoEnabled";
+
+type PermQuery = {
+  query?: (d: { name: string }) => Promise<{ state: string }>;
+};
+
 export function useGeolocation() {
   const [position, setPosition] = useState<GeoPosition | null>(null);
   const [error, setError] = useState<string | null>(() =>
-    typeof navigator !== "undefined" && navigator.geolocation
-      ? null
-      : "Geolocation not supported",
+    navigator.geolocation ? null : "Geolocation not supported",
   );
+  const [state, setState] = useState<GeoState>(() =>
+    navigator.geolocation ? "checking" : "unsupported",
+  );
+  const watchId = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    const id = navigator.geolocation.watchPosition(
-      (p) =>
+  const clearWatch = useCallback(() => {
+    if (watchId.current !== null) {
+      navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
+  }, []);
+
+  const queryPerm = useCallback(async (): Promise<string | null> => {
+    const perms = navigator.permissions as PermQuery | undefined;
+    if (!perms?.query) return null;
+    try {
+      return (await perms.query({ name: "geolocation" })).state;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const start = useCallback(() => {
+    if (watchId.current !== null) return;
+    setState("watching");
+    setError(null);
+    watchId.current = navigator.geolocation.watchPosition(
+      (p) => {
         setPosition({
           lat: p.coords.latitude,
           lng: p.coords.longitude,
           accuracy: p.coords.accuracy,
           heading: p.coords.heading,
           speed: p.coords.speed,
-        }),
-      (e) => setError(e.message),
+        });
+        localStorage.setItem(KEY, "1");
+      },
+      (e) => {
+        if (e.code === 1) {
+          clearWatch();
+          localStorage.removeItem(KEY);
+          setState("denied");
+          setError(e.message);
+        } else if (e.code === 3) {
+          setError(e.message);
+          queryPerm().then((s) => {
+            if (s === "prompt") {
+              clearWatch();
+              setState("prompt");
+            }
+          });
+        } else {
+          setError(e.message);
+        }
+      },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
     );
-    return () => navigator.geolocation.clearWatch(id);
-  }, []);
+  }, [clearWatch, queryPerm]);
 
-  return { position, error };
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    let alive = true;
+    if (localStorage.getItem(KEY) === "1") start();
+    else
+      queryPerm().then((s) => {
+        if (!alive) return;
+        if (s === "granted") start();
+        else if (s === "denied") setState("denied");
+        else setState("prompt");
+      });
+    return () => {
+      alive = false;
+      clearWatch();
+    };
+  }, [start, queryPerm, clearWatch]);
+
+  return { position, error, state, request: start };
 }

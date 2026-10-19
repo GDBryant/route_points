@@ -54,7 +54,7 @@ export default function MapPage() {
   const token = params.get("token");
   const guest = !user && !!token;
   const exit = () => navigate(guest ? "/" : "/adventures");
-  const { position, error } = useGeolocation();
+  const { position, error, state, request } = useGeolocation();
 
   const [role, setRole] = useState<string | null>(null);
   const [snapRadius, setSnapRadius] = useState(20);
@@ -307,9 +307,22 @@ export default function MapPage() {
 
   return (
     <div
-      className={`mappage${guest || !sync.online || moving ? " has-banner" : ""}`}
+      className={`mappage${guest || !sync.online || moving || state === "prompt" || state === "denied" ? " has-banner" : ""}`}
     >
       {guest && <div className="banner">Viewing as guest</div>}
+      {state === "prompt" && (
+        <div className="banner">
+          Location is off
+          <button className="linklike" onClick={request}>
+            Enable location
+          </button>
+        </div>
+      )}
+      {state === "denied" && (
+        <div className="banner">
+          Location blocked — allow it in your browser's site settings
+        </div>
+      )}
       {!sync.online && (
         <div className="banner offline">Offline — changes will sync</div>
       )}
