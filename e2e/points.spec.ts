@@ -27,7 +27,8 @@ test("add points, list, guest viewer", async ({ page, request, browser }) => {
 
   await page.getByRole("button", { name: "Points" }).click();
   await expect(page.locator(".card")).toHaveCount(2);
-  await page.locator(".card").first().click();
+  await page.locator(".card .linklike").first().click();
+  await expect(page.locator(".panel.overlay")).toHaveCount(0);
 
   await page.locator(".pm-label", { hasText: "Obstacle 1" }).click();
   await expect(page.locator(".sheet").getByText(/\d+ m · \d+°/)).toBeVisible();

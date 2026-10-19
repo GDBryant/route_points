@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+npm run lint
+npm run typecheck
+npm test
+
+npx supabase start >/dev/null
+eval "$(npx supabase status -o env)"
+export VITE_SUPABASE_URL=$API_URL VITE_SUPABASE_ANON_KEY=$PUBLISHABLE_KEY SUPABASE_SECRET_KEY=$SECRET_KEY
+npx playwright install chromium >/dev/null
+npx supabase test db
+npm run test:e2e
