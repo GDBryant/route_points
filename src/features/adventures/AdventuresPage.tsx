@@ -8,6 +8,7 @@ import {
 } from "./api";
 import ShareSheet from "./ShareSheet";
 import InstallHint from "@/features/pwa/InstallHint";
+import AboutUpdate from "@/features/pwa/AboutUpdate";
 import { useAuth } from "@/features/auth/useAuth";
 
 export default function AdventuresPage() {
@@ -95,6 +96,7 @@ export default function AdventuresPage() {
       )}
       <div style={{ marginTop: 16 }}>
         <InstallHint />
+        <AboutUpdate />
       </div>
       <button
         className="signout"

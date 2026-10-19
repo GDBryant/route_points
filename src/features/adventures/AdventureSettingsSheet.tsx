@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { updateAdventure } from "./api";
 import InstallHint from "@/features/pwa/InstallHint";
-import { checkForUpdates, type UpdateCheck } from "@/features/pwa/updates";
+import AboutUpdate from "@/features/pwa/AboutUpdate";
 
 export default function AdventureSettingsSheet({
   adventure,
@@ -30,27 +30,6 @@ export default function AdventureSettingsSheet({
 }) {
   const [name, setName] = useState(adventure.name);
   const [snap, setSnap] = useState(adventure.snap_radius_m);
-  const [status, setStatus] = useState<"idle" | "checking" | "done">("idle");
-  const [msg, setMsg] = useState("");
-
-  const check = async () => {
-    setStatus("checking");
-    setMsg("Checking…");
-    const r: UpdateCheck | "error" = await checkForUpdates().catch(
-      () => "error" as const,
-    );
-    setStatus("done");
-    setMsg(
-      r === "unsupported"
-        ? "Updates unavailable in this browser"
-        : r === "none"
-          ? "Up to date"
-          : r === "found"
-            ? "Update found — restarting…"
-            : "Check failed",
-    );
-  };
-
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isOwner)
@@ -119,19 +98,7 @@ export default function AdventureSettingsSheet({
         <button type="submit" className="primary">
           Done
         </button>
-        <div className="about muted">
-          <span>
-            v{__APP_VERSION__} · {__BUILD_DATE__}
-          </span>
-          <button
-            type="button"
-            onClick={check}
-            disabled={status === "checking"}
-          >
-            Check for updates
-          </button>
-          {msg && <span>{msg}</span>}
-        </div>
+        <AboutUpdate />
       </form>
     </div>
   );
