@@ -1,14 +1,35 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 cd "$(dirname "$0")"
 
-npm run lint
-npm run typecheck
-npm test
+mkdir -p logs
+LOG="logs/run_tests_$(date +%Y%m%d_%H%M%S).log"
+exec > >(tee "$LOG") 2>&1
+
+PASS=() FAIL=()
+run() {
+  local name=$1; shift
+  echo "=== $name"
+  if "$@"; then PASS+=("$name"); else FAIL+=("$name"); fi
+}
+
+run lint npm run lint
+run typecheck npm run typecheck
+run unit npm test
 
 npx supabase start >/dev/null
 eval "$(npx supabase status -o env)"
 export VITE_SUPABASE_URL=$API_URL VITE_SUPABASE_ANON_KEY=$PUBLISHABLE_KEY SUPABASE_SECRET_KEY=$SECRET_KEY
 npx playwright install chromium >/dev/null
-npx supabase test db
-npm run test:e2e
+run db npx supabase test db
+run e2e npm run test:e2e
+
+echo
+echo "=== SUMMARY  log=$LOG"
+for n in "${PASS[@]}"; do echo "PASS  $n"; done
+for n in "${FAIL[@]}"; do echo "FAIL  $n"; done
+if ((${#FAIL[@]})); then
+  echo "RESULT: ${#FAIL[@]} FAILED (${FAIL[*]})"
+  exit 1
+fi
+echo "RESULT: ALL ${#PASS[@]} PASSED"
