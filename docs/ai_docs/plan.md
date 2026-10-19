@@ -80,6 +80,13 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 - OSM tile usage policy: bulk prefetch must be modest (limit zoom/bbox) or use a tile proxy/own tiles later
 - GPS accuracy in dunes: store `accuracy_m`, filter waypoints with accuracy > 50 m
 
+## M7 General-purpose routes (2026-10-19)
+
+- Kinds: `obstacle, start, end, poi, viewpoint, turn, hazard, camp, entrance, fuel, water, gate, parking, other` (migration 0007 widens check). Per-kind colour. All kinds auto-named `Kind N` (count per kind); `seq` stays obstacle-only.
+- Record defaults: mode `auto`, interval 10 s. "Drop waypoint" visible in auto mode; tap drops a vertex and opens AddPointSheet (kind `turn`, cancellable).
+- Start: recording begins immediately; if no point within 50 m (`START_PROMPT_M`, independent of snap radius) open AddPointSheet kind `start`, name `Start`; on save set `from_point_id`. Cancel → no from point.
+- Stop: if no own point within snap radius, open AddPointSheet kind `end` before Finish sheet. Name = nearest named OSM feature within 200 m (Overpass, then Nominatim reverse fallback, 5 s timeout), else `End`. Offline → silent `End`. Then Finish sheet with `to` = that point, route name `From → To`.
+
 ## Open questions
 
-- None outstanding. Confirm Esri tile ToS acceptable for offline caching before M4.
+- None outstanding.
