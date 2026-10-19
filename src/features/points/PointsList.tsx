@@ -1,4 +1,5 @@
 import type { Point } from "./api";
+import { KIND_LABEL, type Kind } from "./kinds";
 
 export default function PointsList({
   points,
@@ -23,7 +24,10 @@ export default function PointsList({
           <button className="linklike" onClick={() => onTap(p)}>
             {p.seq != null && <span className="seq">#{p.seq}</span>}
             <strong>{p.name}</strong>
-            <span className="muted"> {p.kind}</span>
+            <span className="muted">
+              {" "}
+              {KIND_LABEL[p.kind as Kind] ?? p.kind}
+            </span>
           </button>
           {isEditor && onMove && (
             <span className="moves">

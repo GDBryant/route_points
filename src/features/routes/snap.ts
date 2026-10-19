@@ -1,6 +1,8 @@
 import { haversineM, type LatLng } from "@/lib/geo";
 import type { Point } from "@/features/points/api";
 
+export const START_PROMPT_M = 50;
+
 export function nearestPoint(
   pos: LatLng | null,
   points: Point[],

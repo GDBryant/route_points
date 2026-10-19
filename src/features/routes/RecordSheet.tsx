@@ -11,7 +11,6 @@ const INTERVAL_KEY = "rp.rec.interval_s";
 
 export default function RecordSheet({
   state,
-  mode: recMode,
   waypointCount,
   elapsedS,
   onStart,
@@ -27,10 +26,10 @@ export default function RecordSheet({
   onStop: () => void;
 }) {
   const [mode, setMode] = useState<"manual" | "auto">(
-    () => (localStorage.getItem(MODE_KEY) as "manual" | "auto") ?? "manual",
+    () => (localStorage.getItem(MODE_KEY) as "manual" | "auto") ?? "auto",
   );
   const [t, setT] = useState(() =>
-    secondsToT(Number(localStorage.getItem(INTERVAL_KEY)) || 30),
+    secondsToT(Number(localStorage.getItem(INTERVAL_KEY)) || 10),
   );
   const secs = tToSeconds(t);
 
@@ -97,7 +96,7 @@ export default function RecordSheet({
         <span>{waypointCount} waypoints</span>
       </div>
       <div className="stack">
-        {state === "recording" && recMode !== "auto" && (
+        {state === "recording" && (
           <button className="primary big" onClick={onDrop}>
             Drop waypoint
           </button>

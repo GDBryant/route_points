@@ -4,6 +4,39 @@ import RecordSheet from "./RecordSheet";
 import { secondsToT, tToSeconds } from "./interval";
 
 describe("RecordSheet", () => {
+  it("defaults to auto with 10 s interval", () => {
+    localStorage.clear();
+    const onStart = vi.fn();
+    render(
+      <RecordSheet
+        state="idle"
+        waypointCount={0}
+        elapsedS={0}
+        onStart={onStart}
+        onDrop={vi.fn()}
+        onStop={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByText("Start route"));
+    expect(onStart).toHaveBeenCalledWith("auto", 10);
+    localStorage.clear();
+  });
+
+  it("shows Drop waypoint in auto mode", () => {
+    render(
+      <RecordSheet
+        state="recording"
+        mode="auto"
+        waypointCount={0}
+        elapsedS={0}
+        onStart={vi.fn()}
+        onDrop={vi.fn()}
+        onStop={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Drop waypoint")).toBeInTheDocument();
+  });
+
   it("updates interval label when slider moves", () => {
     render(
       <RecordSheet

@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(11);
 
 create temp table u (id uuid, rn int);
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
@@ -38,6 +38,22 @@ select is(
   (select name from points where client_id = '11111111-1111-1111-1111-111111111111'),
   'Obstacle 1',
   'point inserted with name'
+);
+select lives_ok(
+  $$select upsert_point(jsonb_build_object(
+      'adventure_id', (select aid from ctx),
+      'client_id', gen_random_uuid(),
+      'name', 'Viewpoint 1', 'kind', 'viewpoint',
+      'lat', -33.5, 'lng', 18.4))$$,
+  'kind viewpoint allowed'
+);
+select throws_ok(
+  $$select upsert_point(jsonb_build_object(
+      'adventure_id', (select aid from ctx),
+      'client_id', gen_random_uuid(),
+      'name', 'X', 'kind', 'bogus',
+      'lat', 0, 'lng', 0))$$,
+  '23514'
 );
 
 select set_config('request.jwt.claims',
@@ -87,7 +103,7 @@ set role anon;
 select set_config('request.jwt.claims', '{}', true);
 select is(
   (select count(*)::int from get_adventure_points((select tok from ctx))),
-  1,
+  2,
   'anon get_adventure_points returns rows'
 );
 select is(

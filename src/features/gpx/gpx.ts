@@ -4,8 +4,7 @@ import type {
   RouteRow,
   WaypointInput,
 } from "@/features/routes/api";
-
-const KINDS = ["obstacle", "camp", "entrance", "other"];
+import { KINDS } from "@/features/points/kinds";
 
 const esc = (s: string) =>
   s
@@ -65,7 +64,9 @@ export function fromGpx(
     adventure_id: adventureId,
     client_id: crypto.randomUUID(),
     name: w.querySelector("name")?.textContent || "Imported point",
-    kind: KINDS.includes(w.querySelector("type")?.textContent ?? "")
+    kind: (KINDS as readonly string[]).includes(
+      w.querySelector("type")?.textContent ?? "",
+    )
       ? w.querySelector("type")!.textContent!
       : "other",
     seq: null,

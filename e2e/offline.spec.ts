@@ -27,12 +27,16 @@ test("offline queue syncs on reconnect", async ({ page, request }) => {
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Record" }).click();
+  await page.getByRole("button", { name: "Manual" }).click();
   await page.getByRole("button", { name: "Start route" }).click();
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await page.context().setGeolocation({ latitude: -33.562, longitude: 18.48 });
   await page.waitForTimeout(600);
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("button", { name: "Stop" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
   await page.getByRole("button", { name: "Save route" }).click();
 
   await expect(page.locator(".sync-badge .count")).toHaveText(/[3-9]\d*/);

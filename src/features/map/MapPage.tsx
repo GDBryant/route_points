@@ -29,6 +29,8 @@ import { usePositions } from "@/features/live/usePositions";
 import NavigateHud from "@/features/live/NavigateHud";
 import { useAuth as useAuthCtx } from "@/features/auth/useAuth";
 import { useRecorder, type PendingRoute } from "@/features/routes/useRecorder";
+import { nearestPoint, START_PROMPT_M } from "@/features/routes/snap";
+import { nearbyOsmName } from "@/features/points/osmName";
 import RecordSheet from "@/features/routes/RecordSheet";
 import FinishRouteSheet, {
   type FinishInput,
@@ -77,6 +79,9 @@ export default function MapPage() {
     lng: number;
     accuracy: number | null;
     initial?: Point;
+    kind?: string;
+    role?: "start" | "turn" | "end";
+    name?: string;
   } | null>(null);
   const [selected, setSelected] = useState<Point | null>(null);
   const [moving, setMoving] = useState<Point | null>(null);
@@ -159,7 +164,19 @@ export default function MapPage() {
     setAdding(null);
     setEndRouteAt(false);
     refresh();
-    if (newEnd && finishing && saved?.id) {
+    if (adding.role === "start" && saved?.id) {
+      recorder.setFromPoint(saved.id);
+      const r = recorder.route;
+      if (r)
+        await saveRouteLocal({
+          adventure_id: id,
+          client_id: r.client_id,
+          mode: r.mode,
+          interval_s: r.interval_s,
+          started_at: r.started_at,
+          from_point_id: saved.id,
+        }).catch(() => {});
+    } else if (newEnd && finishing && saved?.id) {
       setNewEnd(false);
       setFinishing({ ...finishing, forceToId: saved.id });
     } else if (wasEnd && saved?.id) {
@@ -208,7 +225,23 @@ export default function MapPage() {
 
   const onStopRecord = async () => {
     const res = await recorder.stop();
-    if (res.route) setFinishing({ ...res, route: res.route });
+    if (
+      res.route &&
+      res.lastPos &&
+      !nearestPoint(res.lastPos, points, snapRadius)
+    ) {
+      const name = await nearbyOsmName(res.lastPos.lat, res.lastPos.lng);
+      setFinishing({ ...res, route: res.route });
+      setNewEnd(true);
+      setAdding({
+        lat: res.lastPos.lat,
+        lng: res.lastPos.lng,
+        accuracy: res.lastPos.accuracy,
+        kind: "end",
+        role: "end",
+        name: name ?? undefined,
+      });
+    } else if (res.route) setFinishing({ ...res, route: res.route });
     else recorder.finishDone();
   };
 
@@ -516,24 +549,6 @@ export default function MapPage() {
         />
       )}
 
-      {adding && (
-        <AddPointSheet
-          lat={adding.lat}
-          lng={adding.lng}
-          accuracy={adding.accuracy}
-          points={points}
-          initial={adding.initial}
-          recording={recorder.state === "recording"}
-          endRouteAt={endRouteAt}
-          onEndRouteAt={setEndRouteAt}
-          onSave={savePoint}
-          onClose={() => {
-            setAdding(null);
-            setNewEnd(false);
-          }}
-        />
-      )}
-
       {selected && !adding && (
         <PointDetailSheet
           point={selected}
@@ -571,7 +586,16 @@ export default function MapPage() {
           waypointCount={recorder.waypointCount}
           elapsedS={recorder.elapsedS}
           onStart={() => {}}
-          onDrop={recorder.dropWaypoint}
+          onDrop={() => {
+            if (recorder.dropWaypoint() && position)
+              setAdding({
+                lat: position.lat,
+                lng: position.lng,
+                accuracy: position.accuracy,
+                kind: "turn",
+                role: "turn",
+              });
+          }}
           onStop={onStopRecord}
         />
       )}
@@ -591,6 +615,14 @@ export default function MapPage() {
                 started_at: r.started_at,
                 from_point_id: r.from_point_id,
               }).catch(() => {});
+            if (position && !nearestPoint(position, points, START_PROMPT_M))
+              setAdding({
+                lat: position.lat,
+                lng: position.lng,
+                accuracy: position.accuracy,
+                kind: "start",
+                role: "start",
+              });
           }}
           onDrop={() => {}}
           onStop={() => setRecording(false)}
@@ -619,6 +651,26 @@ export default function MapPage() {
                 }
               : undefined
           }
+        />
+      )}
+
+      {adding && (
+        <AddPointSheet
+          lat={adding.lat}
+          lng={adding.lng}
+          accuracy={adding.accuracy}
+          points={points}
+          initial={adding.initial}
+          initialKind={adding.kind}
+          initialName={adding.name}
+          recording={recorder.state === "recording" && !adding.role}
+          endRouteAt={endRouteAt}
+          onEndRouteAt={setEndRouteAt}
+          onSave={savePoint}
+          onClose={() => {
+            setAdding(null);
+            setNewEnd(false);
+          }}
         />
       )}
 

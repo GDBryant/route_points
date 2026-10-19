@@ -1,6 +1,7 @@
 import type { Point } from "./api";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
 import { bearingDeg, haversineM } from "@/lib/geo";
+import { KIND_LABEL, type Kind } from "./kinds";
 
 export default function PointDetailSheet({
   point,
@@ -30,7 +31,7 @@ export default function PointDetailSheet({
     <div className="sheet" role="dialog">
       <h3>{point.name}</h3>
       <p className="muted">
-        {point.kind}
+        {KIND_LABEL[point.kind as Kind] ?? point.kind}
         {dist != null && ` · ${Math.round(dist)} m`}
         {bearing != null && ` · ${Math.round(bearing)}°`}
       </p>

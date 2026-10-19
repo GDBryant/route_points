@@ -23,13 +23,17 @@ test("export and import GPX", async ({ page, request }) => {
   }
 
   await page.getByRole("button", { name: "Record" }).click();
+  await page.getByRole("button", { name: "Manual" }).click();
   await page.getByRole("button", { name: "Start route" }).click();
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await page.context().setGeolocation({ latitude: -33.561, longitude: 18.48 });
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByText(/[2-9]\d* waypoints/)).toBeVisible();
   await page.getByRole("button", { name: "Stop" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
   await page.getByRole("button", { name: "Save route" }).click();
   await expect(page.locator("path.leaflet-interactive").first()).toBeAttached();
   await page.getByRole("button", { name: "Routes" }).click();
@@ -63,7 +67,7 @@ test("export and import GPX", async ({ page, request }) => {
   await page.getByRole("button", { name: "⚙" }).click();
   await page.getByRole("button", { name: "Import GPX" }).click();
   await page.locator("input[type=file]").setInputFiles(path!);
-  await expect(page.getByText("2 waypoints, 1 routes")).toBeVisible();
+  await expect(page.getByText("3 waypoints, 1 routes")).toBeVisible();
   await page.getByRole("button", { name: "Import", exact: true }).click();
   await expect(
     page.locator(".pm-label", { hasText: "Obstacle 1" }),

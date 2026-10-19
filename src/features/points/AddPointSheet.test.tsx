@@ -22,8 +22,12 @@ describe("suggestedName", () => {
   it("suggests Obstacle 1 when none exist", () => {
     expect(suggestedName([], "obstacle")).toBe("Obstacle 1");
   });
-  it("empty for non-obstacle kinds", () => {
-    expect(suggestedName(pts([1]), "camp")).toBe("");
+  it("counts per kind for non-obstacle kinds", () => {
+    expect(suggestedName(pts([1]), "camp")).toBe("Camp 1");
+    expect(
+      suggestedName([{ ...pts([1])[0], kind: "viewpoint" }], "viewpoint"),
+    ).toBe("Viewpoint 2");
+    expect(suggestedName([], "poi")).toBe("PoI 1");
   });
 });
 
@@ -54,6 +58,25 @@ describe("AddPointSheet", () => {
         accuracy_m: 10,
       }),
     );
+  });
+
+  it("initialName wins over suggestion and survives kind change", () => {
+    render(
+      <AddPointSheet
+        lat={-33.5}
+        lng={18.4}
+        points={[]}
+        initialKind="end"
+        initialName="Signal Hill"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByPlaceholderText("Name")).toHaveValue("Signal Hill");
+    fireEvent.change(screen.getByLabelText("Kind"), {
+      target: { value: "viewpoint" },
+    });
+    expect(screen.getByPlaceholderText("Name")).toHaveValue("Signal Hill");
   });
 
   it("edit mode submits same client_id", () => {

@@ -30,7 +30,7 @@ const renderSheet = (isEditor: boolean) =>
 describe("PointDetailSheet", () => {
   it("shows distance and bearing from position", () => {
     renderSheet(false);
-    expect(screen.getByText(/obstacle · \d+ m · \d+°/)).toBeInTheDocument();
+    expect(screen.getByText(/Obstacle · \d+ m · \d+°/)).toBeInTheDocument();
   });
 
   it("hides Edit/Delete for viewers", () => {

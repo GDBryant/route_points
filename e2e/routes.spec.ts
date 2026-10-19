@@ -29,12 +29,20 @@ test("manual route A→B with snap and direction", async ({
   await page.context().setGeolocation({ latitude: -33.5601, longitude: 18.48 });
   await page.waitForTimeout(600);
 
+  await page.route("**/overpass-api.de/**", (r) =>
+    r.fulfill({ json: { elements: [] } }),
+  );
+  await page.route("**/nominatim.openstreetmap.org/**", (r) => r.abort());
+
   await page.getByRole("button", { name: "Record" }).click();
+  await page.getByRole("button", { name: "Manual" }).click();
   await page.getByRole("button", { name: "Start route" }).click();
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await page.context().setGeolocation({ latitude: -33.5615, longitude: 18.48 });
   await page.waitForTimeout(600);
   await page.getByRole("button", { name: "Drop waypoint" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
   await page.context().setGeolocation({ latitude: -33.5629, longitude: 18.48 });
   await page.waitForTimeout(600);
   await page.getByRole("button", { name: "Stop" }).click();
@@ -59,6 +67,50 @@ test("manual route A→B with snap and direction", async ({
   await guest.close();
 });
 
+test("end prompt names point from OSM", async ({ page, request }) => {
+  const email = `e2ee${Date.now()}@test.co`;
+  await createUser(request, email);
+  await signIn(page, email);
+  await page.context().grantPermissions(["geolocation"]);
+  await createAdventure(page, "End Trip");
+  await page.route("**/overpass-api.de/**", (r) =>
+    r.fulfill({
+      json: {
+        elements: [
+          {
+            type: "node",
+            lat: -33.565,
+            lon: 18.48,
+            tags: { name: "Signal Hill" },
+          },
+        ],
+      },
+    }),
+  );
+  await page.route("**/nominatim.openstreetmap.org/**", (r) => r.abort());
+
+  await page.context().setGeolocation({ latitude: -33.56, longitude: 18.48 });
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: "Record" }).click();
+  await page.getByRole("button", { name: "Manual" }).click();
+  await page.getByRole("button", { name: "Start route" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".pm-label", { hasText: "Start 1" })).toBeVisible();
+
+  await page.context().setGeolocation({ latitude: -33.565, longitude: 18.48 });
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: "Stop" }).click();
+
+  await expect(page.getByPlaceholder("Name")).toHaveValue("Signal Hill");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByPlaceholder("Route name")).toHaveValue(
+    "Start 1 → Signal Hill",
+  );
+  await page.getByRole("button", { name: "Save route" }).click();
+  await page.getByRole("button", { name: "Routes" }).click();
+  await expect(page.getByText("Start 1 → Signal Hill")).toBeVisible();
+});
+
 test("auto mode drops waypoints on interval", async ({ page, request }) => {
   const email = `e2ea${Date.now()}@test.co`;
   await createUser(request, email);
@@ -73,6 +125,12 @@ test("auto mode drops waypoints on interval", async ({ page, request }) => {
   await page.getByRole("button", { name: "Auto" }).click();
   await page.locator("input[type=range]").fill("0");
   await page.getByRole("button", { name: "Start route" }).click();
+
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".pm-label", { hasText: "Start 1" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Drop waypoint" }),
+  ).toBeVisible();
 
   for (let i = 0; i < 3; i++) {
     await page

@@ -27,3 +27,4 @@
 - 2026-10-17 Delete adventure, owner-only, cascades + local cache cleared.
 - 2026-10-17 Sync UX: SVG icon, tap toast, amber when unsynced/offline; failed items get Later (1h snooze) instead of Discard — queued writes never dropped.
 - 2026-10-17 Delete fix: removePoint/removeRoute always queue server delete (id==client_id since 0005 broke the never-synced check); sync ignores rows with pending delete. Points/Routes tabs get Delete buttons. v0.2.1. Rule: bump version every push.
+- 2026-10-19 M7 general-purpose routes: kinds, auto default, start/turn/end prompts, OSM end names, ./run_tests. v0.3.0.

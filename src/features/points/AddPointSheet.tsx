@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Point } from "./api";
+import { KINDS, KIND_LABEL } from "./kinds";
 import { suggestedName } from "./suggestedName";
 
 export interface PointFormInput {
@@ -11,14 +12,14 @@ export interface PointFormInput {
   client_id?: string;
 }
 
-const KINDS = ["obstacle", "camp", "entrance", "other"] as const;
-
 export default function AddPointSheet({
   lat,
   lng,
   accuracy,
   points,
   initial,
+  initialKind = "obstacle",
+  initialName,
   recording,
   endRouteAt,
   onEndRouteAt,
@@ -30,18 +31,20 @@ export default function AddPointSheet({
   accuracy?: number | null;
   points: Point[];
   initial?: Point;
+  initialKind?: string;
+  initialName?: string;
   recording?: boolean;
   endRouteAt?: boolean;
   onEndRouteAt?: (v: boolean) => void;
   onSave: (input: PointFormInput) => void;
   onClose: () => void;
 }) {
-  const [kind, setKind] = useState<string>(initial?.kind ?? "obstacle");
+  const [kind, setKind] = useState<string>(initial?.kind ?? initialKind);
   const [name, setName] = useState(
-    () => initial?.name ?? suggestedName(points, "obstacle"),
+    () => initial?.name ?? initialName ?? suggestedName(points, initialKind),
   );
   const [note, setNote] = useState(initial?.note ?? "");
-  const [touched, setTouched] = useState(!!initial);
+  const [touched, setTouched] = useState(!!initial || !!initialName);
 
   const pickKind = (k: string) => {
     setKind(k);
@@ -71,18 +74,17 @@ export default function AddPointSheet({
         {accuracy != null && ` (±${Math.round(accuracy)} m)`}
       </p>
       <form onSubmit={save} className="stack">
-        <div className="segmented">
+        <select
+          aria-label="Kind"
+          value={kind}
+          onChange={(e) => pickKind(e.target.value)}
+        >
           {KINDS.map((k) => (
-            <button
-              key={k}
-              type="button"
-              className={kind === k ? "seg active" : "seg"}
-              onClick={() => pickKind(k)}
-            >
-              {k}
-            </button>
+            <option key={k} value={k}>
+              {KIND_LABEL[k]}
+            </option>
           ))}
-        </div>
+        </select>
         <input
           required
           placeholder="Name"

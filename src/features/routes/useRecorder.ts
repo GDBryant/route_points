@@ -113,6 +113,12 @@ export function useRecorder(
     return { route: r, lastPos };
   };
 
+  const setFromPoint = (id: string) => {
+    if (!routeRef.current) return;
+    routeRef.current.from_point_id = id;
+    setRoute({ ...routeRef.current });
+  };
+
   const finishDone = () => {
     routeRef.current = null;
     setRoute(null);
@@ -155,6 +161,7 @@ export function useRecorder(
     pendingCoords,
     start,
     dropWaypoint,
+    setFromPoint,
     stop,
     finishDone,
   };

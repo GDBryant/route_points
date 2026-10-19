@@ -119,6 +119,15 @@ describe("useRecorder", () => {
     expect(result.current.route?.from_point_id).toBe("p-near");
   });
 
+  it("setFromPoint updates route and no-ops when idle", () => {
+    const { result } = renderHook(() => useRecorder(pos(), [], 20));
+    act(() => result.current.setFromPoint("p-x"));
+    expect(result.current.route).toBeNull();
+    act(() => result.current.start("manual", null));
+    act(() => result.current.setFromPoint("p-start"));
+    expect(result.current.route?.from_point_id).toBe("p-start");
+  });
+
   it("flushes buffered waypoints at 10", async () => {
     const { result } = renderHook(() => useRecorder(pos(), [], 20));
     act(() => result.current.start("manual", null));
