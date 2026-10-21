@@ -21,6 +21,14 @@ const pos = (accuracy = 5, lat = -33.5, lng = 18.4): GeoPosition => ({
   speed: 0,
 });
 
+const setVis = (value: string) => {
+  Object.defineProperty(document, "visibilityState", {
+    configurable: true,
+    value,
+  });
+  document.dispatchEvent(new Event("visibilitychange"));
+};
+
 const pt = (id: string, lat = -33.5001, lng = 18.4001): Point => ({
   id,
   name: id,
@@ -125,6 +133,42 @@ describe("useRecorder", () => {
     act(() => result.current.start("manual", null));
     act(() => result.current.setFromPoint("p-start"));
     expect(result.current.route?.from_point_id).toBe("p-start");
+  });
+
+  it("flushes buffer when hidden", async () => {
+    const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
+    act(() => result.current.start("manual", null));
+    act(() => result.current.dropWaypoint());
+    act(() => setVis("hidden"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(addWaypoints).toHaveBeenCalledTimes(1);
+    expect(addWaypoints.mock.calls[0][1]).toHaveLength(1);
+    setVis("visible");
+  });
+
+  it("re-acquires wake lock and drops immediately on visible", async () => {
+    const request = vi.fn().mockResolvedValue({ release: vi.fn() });
+    Object.defineProperty(navigator, "wakeLock", {
+      value: { request },
+      configurable: true,
+    });
+    const ref = { current: pos() };
+    const { result } = renderHook(() => useRecorder(ref, [], 20));
+    act(() => result.current.start("auto", 10));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(request).toHaveBeenCalledTimes(1);
+    const count = result.current.waypointCount;
+    ref.current = pos(5, -33.5002, 18.4);
+    act(() => setVis("visible"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(result.current.waypointCount).toBe(count + 1);
   });
 
   it("flushes buffered waypoints at 10", async () => {

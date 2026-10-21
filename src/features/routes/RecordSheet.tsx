@@ -133,6 +133,9 @@ export default function RecordSheet({
           Stop
         </button>
       </div>
+      <p className="hint">
+        Keep the screen on — recording pauses in the background.
+      </p>
     </div>
   );
 }

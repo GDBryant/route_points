@@ -78,6 +78,13 @@ export function useRecorder(
     });
   }, []);
 
+  const acquireWakeLock = useCallback(() => {
+    navigator.wakeLock
+      ?.request("screen")
+      .then((wl) => (wakeLockRef.current = wl))
+      .catch(() => {});
+  }, []);
+
   const start = (mode: "manual" | "auto", intervalS: number | null) => {
     const r: PendingRoute = {
       client_id: crypto.randomUUID(),
@@ -98,10 +105,7 @@ export function useRecorder(
     setElapsedS(0);
     setPendingCoords([]);
     setState("recording");
-    navigator.wakeLock
-      ?.request("screen")
-      .then((wl) => (wakeLockRef.current = wl))
-      .catch(() => {});
+    acquireWakeLock();
     return r;
   };
 
@@ -139,17 +143,27 @@ export function useRecorder(
         const p = posRef.current;
         const last = lastPosRef.current;
         const due =
-          Date.now() - lastDropMsRef.current >= (r!.interval_s ?? 5) * 1000;
+          Date.now() - lastDropMsRef.current >= (r!.interval_s ?? 10) * 1000;
         const moved = !last || haversineM(last, p!) >= MIN_MOVE_M;
         if (p && due && moved) dropWaypoint();
       }
     }, 1000);
     const flushTimer = setInterval(flush, FLUSH_MS);
+    const vis = () => {
+      if (document.visibilityState === "hidden") {
+        flush();
+        return;
+      }
+      acquireWakeLock();
+      lastDropMsRef.current = 0;
+    };
+    document.addEventListener("visibilitychange", vis);
     return () => {
       clearInterval(tick);
       clearInterval(flushTimer);
+      document.removeEventListener("visibilitychange", vis);
     };
-  }, [state, posRef, dropWaypoint, flush]);
+  }, [state, posRef, dropWaypoint, flush, acquireWakeLock]);
 
   useEffect(() => {
     if (state === "recording" && bufRef.current.length >= FLUSH_COUNT) flush();

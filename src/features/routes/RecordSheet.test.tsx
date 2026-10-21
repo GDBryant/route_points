@@ -145,6 +145,25 @@ describe("RecordSheet", () => {
     localStorage.clear();
   });
 
+  it("shows keep-screen-on hint expanded but not minimised", () => {
+    localStorage.clear();
+    const props = {
+      waypointCount: 0,
+      elapsedS: 0,
+      onStart: vi.fn(),
+      onDrop: vi.fn(),
+      onStop: vi.fn(),
+    };
+    const { unmount } = render(<RecordSheet state="recording" {...props} />);
+    expect(
+      screen.getByText(/recording pauses in the background/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Minimise recording controls"));
+    expect(screen.queryByText(/recording pauses in the background/)).toBeNull();
+    unmount();
+    localStorage.clear();
+  });
+
   it("Cancel in idle calls onStop", () => {
     const onStop = vi.fn();
     render(
