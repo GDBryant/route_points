@@ -16,11 +16,16 @@ export function shareUrl(token: string): string {
 }
 
 export async function listAdventures(): Promise<Adventure[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
   const { data, error } = await supabase
     .from("adventure_members")
     .select(
       "role, last_opened_at, adventures(id, name, description, share_token, snap_radius_m)",
     )
+    .eq("user_id", user.id)
     .order("last_opened_at", { ascending: false });
   if (error) throw error;
   return (data ?? [])

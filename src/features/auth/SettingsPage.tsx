@@ -3,13 +3,14 @@ import { supabase } from "@/lib/supabase";
 import { useAuth, type Profile } from "./useAuth";
 
 export default function SettingsPage() {
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
 
   return (
     <div className="page">
       <h1>Settings</h1>
       {profile && <SettingsForm key={profile.id} profile={profile} />}
       <button onClick={signOut}>Sign out</button>
+      <p className="muted">Logged in as {user?.email}</p>
     </div>
   );
 }

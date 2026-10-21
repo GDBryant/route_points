@@ -18,7 +18,7 @@ export default function AdventuresPage() {
   const [share, setShare] = useState<Adventure | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     listAdventures()
@@ -97,6 +97,7 @@ export default function AdventuresPage() {
       <div style={{ marginTop: 16 }}>
         <InstallHint />
         <AboutUpdate />
+        <p className="muted">Logged in as {user?.email}</p>
       </div>
       <button
         className="signout"

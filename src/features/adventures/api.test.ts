@@ -51,11 +51,16 @@ const rows = [
 describe("listAdventures", () => {
   it("maps membership rows ordered by last_opened desc", async () => {
     const order = vi.fn().mockResolvedValue({ data: rows, error: null });
-    const select = vi.fn().mockReturnValue({ order });
+    const eq = vi.fn().mockReturnValue({ order });
+    const select = vi.fn().mockReturnValue({ eq });
     vi.mocked(supabase.from).mockReturnValue({ select } as never);
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: "u1" } },
+    } as never);
 
     const list = await listAdventures();
     expect(supabase.from).toHaveBeenCalledWith("adventure_members");
+    expect(eq).toHaveBeenCalledWith("user_id", "u1");
     expect(order).toHaveBeenCalledWith("last_opened_at", {
       ascending: false,
     });
