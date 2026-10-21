@@ -105,6 +105,46 @@ describe("RecordSheet", () => {
     localStorage.clear();
   });
 
+  it("minimise hides buttons and expand restores them", () => {
+    localStorage.clear();
+    render(
+      <RecordSheet
+        state="recording"
+        waypointCount={0}
+        elapsedS={0}
+        onStart={vi.fn()}
+        onDrop={vi.fn()}
+        onStop={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Minimise recording controls"));
+    expect(screen.queryByText("Drop waypoint")).toBeNull();
+    expect(screen.queryByText("Stop")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("0 wp");
+    fireEvent.click(screen.getByLabelText("Show recording controls"));
+    expect(screen.getByText("Drop waypoint")).toBeInTheDocument();
+    expect(screen.getByText("Stop")).toBeInTheDocument();
+    localStorage.clear();
+  });
+
+  it("remembers collapsed state", () => {
+    localStorage.clear();
+    const props = {
+      waypointCount: 0,
+      elapsedS: 0,
+      onStart: vi.fn(),
+      onDrop: vi.fn(),
+      onStop: vi.fn(),
+    };
+    const { unmount } = render(<RecordSheet state="recording" {...props} />);
+    fireEvent.click(screen.getByLabelText("Minimise recording controls"));
+    unmount();
+    render(<RecordSheet state="recording" {...props} />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByText("Stop")).toBeNull();
+    localStorage.clear();
+  });
+
   it("Cancel in idle calls onStop", () => {
     const onStop = vi.fn();
     render(

@@ -8,6 +8,7 @@ import {
 
 const MODE_KEY = "rp.rec.mode";
 const INTERVAL_KEY = "rp.rec.interval_s";
+const COLLAPSED_KEY = "rp.rec.collapsed";
 
 export default function RecordSheet({
   state,
@@ -31,6 +32,13 @@ export default function RecordSheet({
   const [t, setT] = useState(() =>
     secondsToT(Number(localStorage.getItem(INTERVAL_KEY)) || 10),
   );
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === "1",
+  );
+  const toggle = (c: boolean) => {
+    setCollapsed(c);
+    localStorage.setItem(COLLAPSED_KEY, c ? "1" : "0");
+  };
   const secs = tToSeconds(t);
 
   const start = () => {
@@ -89,11 +97,31 @@ export default function RecordSheet({
     );
   }
 
+  if (collapsed) {
+    return (
+      <div className="rec-mini" role="status">
+        <span>
+          {elapsedS}s · {waypointCount} wp
+        </span>
+        <button aria-label="Show recording controls" onClick={() => toggle(false)}>
+          ▲
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="sheet" role="dialog">
       <div className="rec-stats">
         <span>{elapsedS}s</span>
         <span>{waypointCount} waypoints</span>
+        <button
+          className="rec-min"
+          aria-label="Minimise recording controls"
+          onClick={() => toggle(true)}
+        >
+          ▼
+        </button>
       </div>
       <div className="stack">
         {state === "recording" && (
