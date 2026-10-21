@@ -10,6 +10,7 @@ const map = {
   flyToBounds: vi.fn(),
   getZoom: () => 14,
   getCenter: () => ({ lat: 5, lng: 6 }),
+  invalidateSize: vi.fn(),
 };
 
 vi.mock("react-leaflet", () => ({
@@ -82,6 +83,23 @@ describe("MapView", () => {
       </PositionProvider>,
     );
     expect(screen.getByText("Re-center")).toBeInTheDocument();
+  });
+
+  it("applies .mrot when headingUp and invalidates size", () => {
+    const { container } = render(
+      <PositionProvider>
+        <MapView headingUp />
+      </PositionProvider>,
+    );
+    const mrot = container.querySelector(".mrot") as HTMLElement;
+    expect(mrot.style.getPropertyValue("--rot")).toMatch(/-?0deg/);
+    expect(map.invalidateSize).toHaveBeenCalled();
+    const plain = render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
+    expect(plain.container.querySelector(".mrot")).toBeNull();
   });
 
   it("moving marker tracks map centre", () => {

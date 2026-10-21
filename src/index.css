@@ -536,7 +536,18 @@ button.big {
   color: #7a5800;
 }
 
+.mrot {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+}
 .mrot .leaflet-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 142vmax;
+  height: 142vmax;
+  margin: -71vmax 0 0 -71vmax;
   transform: rotate(var(--rot));
 }
 

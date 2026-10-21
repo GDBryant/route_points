@@ -65,6 +65,14 @@ function FollowMe({ following }: { following: boolean }) {
   return null;
 }
 
+function ResizeOnRotate({ active }: { active: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+  }, [active, map]);
+  return null;
+}
+
 function MapEvents({
   onLongPress,
   onUserMove,
@@ -133,7 +141,7 @@ function Rotated({
     headingUp && position?.heading != null ? -position.heading : 0;
   return (
     <div
-      className={rotation ? "mrot" : undefined}
+      className={headingUp ? "mrot" : undefined}
       style={{ ["--rot" as string]: `${rotation}deg` }}
     >
       {children}
@@ -221,6 +229,7 @@ export default function MapView({
           />
         )}
         <FollowMe following={following} />
+        <ResizeOnRotate active={headingUp} />
         <MapEvents onLongPress={onLongPress} onUserMove={stopFollowing} />
         <CenterTracker active={!!movingId} onCenter={setCenter} />
         <FlyTo target={flyTo ?? null} onFly={stopFollowing} />
