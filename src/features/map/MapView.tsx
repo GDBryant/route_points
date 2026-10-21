@@ -32,6 +32,39 @@ export type FlyTarget = {
 };
 
 const DEFAULT_CENTER: [number, number] = [-33.56, 18.48];
+const VIEW_KEY = "lastView";
+
+function loadView(): { center: [number, number]; zoom: number } {
+  const raw = localStorage.getItem(VIEW_KEY);
+  if (raw) {
+    try {
+      const v = JSON.parse(raw);
+      if (
+        Number.isFinite(v.lat) &&
+        Number.isFinite(v.lng) &&
+        Number.isFinite(v.zoom)
+      )
+        return { center: [v.lat, v.lng], zoom: v.zoom };
+    } catch {
+      return { center: DEFAULT_CENTER, zoom: 14 };
+    }
+  }
+  return { center: DEFAULT_CENTER, zoom: 14 };
+}
+
+function SaveView() {
+  const map = useMap();
+  useMapEvents({
+    moveend: () => {
+      const c = map.getCenter();
+      localStorage.setItem(
+        VIEW_KEY,
+        JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.getZoom() }),
+      );
+    },
+  });
+  return null;
+}
 const ESRI_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
@@ -175,6 +208,7 @@ export default function MapView({
   flyTo?: FlyTarget | null;
 }) {
   const { error } = useGeoStatus();
+  const [initial] = useState(loadView);
   const [following, setFollowing] = useState(true);
   const [center, setCenter] = useState<[number, number] | null>(null);
   const stopFollowing = useCallback(() => setFollowing(false), []);
@@ -186,7 +220,7 @@ export default function MapView({
 
   return (
     <Rotated headingUp={headingUp}>
-      <MapContainer center={DEFAULT_CENTER} zoom={14}>
+      <MapContainer center={initial.center} zoom={initial.zoom}>
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="OpenStreetMap">
             <TileLayer
@@ -233,6 +267,7 @@ export default function MapView({
         <MapEvents onLongPress={onLongPress} onUserMove={stopFollowing} />
         <CenterTracker active={!!movingId} onCenter={setCenter} />
         <FlyTo target={flyTo ?? null} onFly={stopFollowing} />
+        <SaveView />
       </MapContainer>
 
       {!following && (

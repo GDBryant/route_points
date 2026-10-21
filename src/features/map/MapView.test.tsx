@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import MapView from "./MapView";
 import { PositionProvider } from "@/features/tracking/PositionContext";
 
 let handlers: Record<string, (...args: unknown[]) => void>;
+let containerProps: { center?: [number, number]; zoom?: number };
 const map = {
   setView: vi.fn(),
   flyTo: vi.fn(),
@@ -14,9 +15,14 @@ const map = {
 };
 
 vi.mock("react-leaflet", () => ({
-  MapContainer: ({ children }: { children: React.ReactNode }) => (
-    <div className="leaflet-container">{children}</div>
-  ),
+  MapContainer: (props: {
+    children: React.ReactNode;
+    center?: [number, number];
+    zoom?: number;
+  }) => {
+    containerProps = props;
+    return <div className="leaflet-container">{props.children}</div>;
+  },
   TileLayer: () => null,
   CircleMarker: () => null,
   Circle: () => null,
@@ -46,6 +52,12 @@ vi.mock("@/features/tracking/useGeolocation", () => ({
 }));
 
 describe("MapView", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    map.getZoom = () => 14;
+    map.getCenter = () => ({ lat: 5, lng: 6 });
+  });
+
   it("renders without crashing", () => {
     const { container } = render(
       <PositionProvider>
@@ -120,5 +132,42 @@ describe("MapView", () => {
     );
     expect(screen.getByTestId("marker").dataset.pos).toBe("5,6");
     expect(fn).toHaveBeenCalledWith(5, 6);
+  });
+
+  it("uses saved view as initial center", () => {
+    localStorage.setItem("lastView", JSON.stringify({ lat: 1, lng: 2, zoom: 9 }));
+    render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
+    expect(containerProps.center).toEqual([1, 2]);
+    expect(containerProps.zoom).toBe(9);
+  });
+
+  it("falls back to default when nothing saved", () => {
+    render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
+    expect(containerProps.center).toEqual([-33.56, 18.48]);
+    expect(containerProps.zoom).toBe(14);
+  });
+
+  it("saves view on moveend", () => {
+    map.getCenter = () => ({ lat: 3, lng: 4 });
+    map.getZoom = () => 12;
+    render(
+      <PositionProvider>
+        <MapView />
+      </PositionProvider>,
+    );
+    act(() => handlers.moveend());
+    expect(JSON.parse(localStorage.getItem("lastView") ?? "")).toEqual({
+      lat: 3,
+      lng: 4,
+      zoom: 12,
+    });
   });
 });

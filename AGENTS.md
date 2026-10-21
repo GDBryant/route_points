@@ -23,6 +23,7 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 - `npm run lint` (oxlint) / `npm run typecheck` / `npm test` / `npm run format`
 - `npm run test:e2e` (Playwright; `npx playwright install chromium` first)
 - `npx supabase db push --linked` (migrations in `supabase/migrations/`); commit lockfile after dep changes or Pages `npm ci` fails
+- Every new Supabase table/view/function needs an explicit `grant ... to authenticated` (and `anon` where needed) in its migration, e.g. `grant select, insert, update, delete on <table> to authenticated;` — RLS alone does not give the app access (see `0002_points.sql`)
 - `./up` → https://HOST (Caddy→Vite), http://HOST:8080 (nginx build); `./down`
 - Node 24 (`.nvmrc`). `npm install` may need `--legacy-peer-deps` (npm arborist bug with vitest peers)
 
