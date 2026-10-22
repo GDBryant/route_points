@@ -17,8 +17,10 @@ export type GeoState =
 
 const KEY = "geoEnabled";
 
+type PermStatus = { state: string; onchange: (() => void) | null };
+
 type PermQuery = {
-  query?: (d: { name: string }) => Promise<{ state: string }>;
+  query?: (d: { name: string }) => Promise<PermStatus>;
 };
 
 export function useGeolocation() {
@@ -30,6 +32,7 @@ export function useGeolocation() {
     navigator.geolocation ? "checking" : "unsupported",
   );
   const watchId = useRef<number | null>(null);
+  const permStatus = useRef<PermStatus | null>(null);
 
   const clearWatch = useCallback(() => {
     if (watchId.current !== null) {
@@ -38,11 +41,13 @@ export function useGeolocation() {
     }
   }, []);
 
-  const queryPerm = useCallback(async (): Promise<string | null> => {
+  const queryPerm = useCallback(async (): Promise<PermStatus | null> => {
     const perms = navigator.permissions as PermQuery | undefined;
     if (!perms?.query) return null;
     try {
-      return (await perms.query({ name: "geolocation" })).state;
+      const s = await perms.query({ name: "geolocation" });
+      permStatus.current = s;
+      return s;
     } catch {
       return null;
     }
@@ -52,7 +57,8 @@ export function useGeolocation() {
     if (watchId.current !== null) return;
     setState("watching");
     setError(null);
-    watchId.current = navigator.geolocation.watchPosition(
+    let cancelled = false;
+    const id = navigator.geolocation.watchPosition(
       (p) => {
         setPosition({
           lat: p.coords.latitude,
@@ -65,6 +71,7 @@ export function useGeolocation() {
       },
       (e) => {
         if (e.code === 1) {
+          cancelled = true;
           clearWatch();
           localStorage.removeItem(KEY);
           setState("denied");
@@ -72,7 +79,7 @@ export function useGeolocation() {
         } else if (e.code === 3) {
           setError(e.message);
           queryPerm().then((s) => {
-            if (s === "prompt") {
+            if (s?.state === "prompt") {
               clearWatch();
               setState("prompt");
             }
@@ -83,6 +90,7 @@ export function useGeolocation() {
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
     );
+    if (!cancelled) watchId.current = id;
   }, [clearWatch, queryPerm]);
 
   useEffect(() => {
@@ -91,16 +99,42 @@ export function useGeolocation() {
     if (localStorage.getItem(KEY) === "1") start();
     else
       queryPerm().then((s) => {
-        if (!alive) return;
-        if (s === "granted") start();
-        else if (s === "denied") setState("denied");
+        if (!alive || !s) {
+          if (alive) setState("prompt");
+          return;
+        }
+        s.onchange = () => {
+          if (s.state === "granted") start();
+        };
+        if (s.state === "granted") start();
+        else if (s.state === "denied") setState("denied");
         else setState("prompt");
       });
     return () => {
       alive = false;
+      if (permStatus.current) permStatus.current.onchange = null;
       clearWatch();
     };
   }, [start, queryPerm, clearWatch]);
+
+  useEffect(() => {
+    if (state !== "denied") return;
+    const retry = () =>
+      navigator.geolocation.getCurrentPosition(() => start(), () => {}, {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
+      });
+    const id = setInterval(retry, 5000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") retry();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [state, start]);
 
   return { position, error, state, request: start };
 }

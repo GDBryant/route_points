@@ -171,6 +171,56 @@ describe("useRecorder", () => {
     expect(result.current.waypointCount).toBe(count + 1);
   });
 
+  it("auto mode started without GPS waits for first fix to firm", async () => {
+    const ref = { current: null as GeoPosition | null };
+    const { result } = renderHook(() => useRecorder(ref, [], 20));
+    act(() => result.current.start("auto", 5));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(result.current.waypointCount).toBe(0);
+    ref.current = pos(30);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.waypointCount).toBe(0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500);
+    });
+    expect(result.current.waypointCount).toBe(0);
+    ref.current = pos(20);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.waypointCount).toBe(1);
+  });
+
+  it("manual mode started without GPS drops first fix at ≤12 m and snaps from point", async () => {
+    const ref = { current: null as GeoPosition | null };
+    const { result } = renderHook(() =>
+      useRecorder(ref, [pt("p-start", -33.5, 18.4)], 20),
+    );
+    act(() => result.current.start("manual", null));
+    expect(result.current.route?.from_point_id).toBeNull();
+    ref.current = pos(10, -33.5, 18.4);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.waypointCount).toBe(1);
+    expect(result.current.route?.from_point_id).toBe("p-start");
+  });
+
+  it("first fix hard cap drops at 15 s when accuracy stays poor", async () => {
+    const ref = { current: null as GeoPosition | null };
+    const { result } = renderHook(() => useRecorder(ref, [], 20));
+    act(() => result.current.start("auto", 5));
+    ref.current = pos(40);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(result.current.waypointCount).toBe(1);
+  });
+
   it("flushes buffered waypoints at 10", async () => {
     const { result } = renderHook(() => useRecorder({ current: pos() }, [], 20));
     act(() => result.current.start("manual", null));

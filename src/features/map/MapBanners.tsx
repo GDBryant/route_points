@@ -31,7 +31,8 @@ export default function MapBanners({
       )}
       {geoState === "denied" && (
         <div className="banner">
-          Location blocked — allow it in your browser's site settings
+          Location unavailable — turn on device location or allow it in site
+          settings
         </div>
       )}
       {!online && (

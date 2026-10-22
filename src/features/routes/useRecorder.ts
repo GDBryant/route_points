@@ -24,6 +24,13 @@ const MAX_ACCURACY_M = 50;
 const MIN_MOVE_M = 5;
 const FLUSH_COUNT = 10;
 const FLUSH_MS = 30_000;
+const GOOD_ACCURACY_M = 12;
+const FIRST_FIX_MS = 3_000;
+const FIRST_FIX_MAX_MS = 15_000;
+const ACC_LEVELS = [GOOD_ACCURACY_M, 25, 50];
+
+const accLevel = (a: number | null) =>
+  a == null ? 0 : ACC_LEVELS.filter((l) => a > l).length;
 
 export function useRecorder(
   posRef: RefObject<GeoPosition | null>,
@@ -45,6 +52,8 @@ export function useRecorder(
   const routeRef = useRef<PendingRoute | null>(null);
   const wakeLockRef = useRef<{ release: () => void } | null>(null);
   const pointsRef = useRef(points);
+  const awaitFixRef = useRef(false);
+  const firstFixRef = useRef<{ ms: number; acc: number | null } | null>(null);
 
   useEffect(() => {
     pointsRef.current = points;
@@ -66,6 +75,7 @@ export function useRecorder(
     lastPosRef.current = p;
     setPendingCoords((c) => [...c, [p.lng, p.lat]]);
     setWaypointCount((n) => n + 1);
+    awaitFixRef.current = false;
     return true;
   }, [posRef]);
 
@@ -100,6 +110,8 @@ export function useRecorder(
     seqRef.current = 0;
     lastPosRef.current = null;
     lastDropMsRef.current = 0;
+    awaitFixRef.current = posRef.current == null;
+    firstFixRef.current = null;
     setRoute(r);
     setWaypointCount(0);
     setElapsedS(0);
@@ -139,6 +151,30 @@ export function useRecorder(
       setElapsedS(
         Math.round((Date.now() - new Date(r!.started_at).getTime()) / 1000),
       );
+      if (awaitFixRef.current) {
+        const p = posRef.current;
+        if (!p) return;
+        const ff = (firstFixRef.current ??= {
+          ms: Date.now(),
+          acc: p.accuracy,
+        });
+        const age = Date.now() - ff.ms;
+        const ready =
+          accLevel(p.accuracy) === 0 ||
+          (age >= FIRST_FIX_MS && accLevel(p.accuracy) < accLevel(ff.acc)) ||
+          age >= FIRST_FIX_MAX_MS;
+        if (ready && dropWaypoint()) {
+          awaitFixRef.current = false;
+          if (routeRef.current && !routeRef.current.from_point_id) {
+            const id = nearestPoint(p, pointsRef.current, snapRadiusM)?.id;
+            if (id) {
+              routeRef.current.from_point_id = id;
+              setRoute({ ...routeRef.current });
+            }
+          }
+        }
+        return;
+      }
       if (r!.mode === "auto") {
         const p = posRef.current;
         const last = lastPosRef.current;
@@ -163,7 +199,7 @@ export function useRecorder(
       clearInterval(flushTimer);
       document.removeEventListener("visibilitychange", vis);
     };
-  }, [state, posRef, dropWaypoint, flush, acquireWakeLock]);
+  }, [state, posRef, dropWaypoint, flush, acquireWakeLock, snapRadiusM]);
 
   useEffect(() => {
     if (state === "recording" && bufRef.current.length >= FLUSH_COUNT) flush();

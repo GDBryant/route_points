@@ -5,18 +5,21 @@ import { useGeolocation } from "./useGeolocation";
 function mockGeo(permState: string | null = "granted") {
   const watchPosition = vi.fn();
   const clearWatch = vi.fn();
-  const query = vi
-    .fn()
-    .mockResolvedValue(permState === null ? null : { state: permState });
+  const getCurrentPosition = vi.fn();
+  const status = {
+    state: permState as string | null,
+    onchange: null as (() => void) | null,
+  };
+  const query = vi.fn().mockResolvedValue(permState === null ? null : status);
   Object.defineProperty(navigator, "geolocation", {
-    value: { watchPosition, clearWatch },
+    value: { watchPosition, clearWatch, getCurrentPosition },
     configurable: true,
   });
   Object.defineProperty(navigator, "permissions", {
     value: permState === "absent" ? undefined : { query },
     configurable: true,
   });
-  return { watchPosition, clearWatch, query };
+  return { watchPosition, clearWatch, getCurrentPosition, query, status };
 }
 
 const fix = {
@@ -151,5 +154,57 @@ describe("useGeolocation", () => {
     const { result } = renderHook(() => useGeolocation());
     await waitFor(() => expect(result.current.state).toBe("prompt"));
     expect(watchPosition).not.toHaveBeenCalled();
+  });
+
+  it("denied permission recovers when permission onchange reports granted", async () => {
+    const { watchPosition, status } = mockGeo("denied");
+    watchPosition.mockReturnValue(11);
+    const { result } = renderHook(() => useGeolocation());
+    await waitFor(() => expect(result.current.state).toBe("denied"));
+    status.state = "granted";
+    act(() => status.onchange?.());
+    expect(watchPosition).toHaveBeenCalled();
+    expect(result.current.state).toBe("watching");
+  });
+
+  it("code 1 denied retries via getCurrentPosition and recovers", async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem("geoEnabled", "1");
+      const { watchPosition, getCurrentPosition } = mockGeo();
+      watchPosition
+        .mockImplementationOnce(
+          (_cb: PositionCallback, err: PositionErrorCallback) => {
+            err({ code: 1, message: "no" } as GeolocationPositionError);
+            return 9;
+          },
+        )
+        .mockReturnValue(12);
+      getCurrentPosition.mockImplementation((cb: PositionCallback) => cb(fix));
+      const { result } = renderHook(() => useGeolocation());
+      expect(result.current.state).toBe("denied");
+      await act(() => vi.advanceTimersByTimeAsync(5000));
+      expect(getCurrentPosition).toHaveBeenCalled();
+      expect(result.current.state).toBe("watching");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("code 1 denied retries on visibilitychange", async () => {
+    localStorage.setItem("geoEnabled", "1");
+    const { watchPosition, getCurrentPosition } = mockGeo();
+    watchPosition.mockImplementation(
+      (_cb: PositionCallback, err: PositionErrorCallback) => {
+        err({ code: 1, message: "no" } as GeolocationPositionError);
+        return 9;
+      },
+    );
+    const { result } = renderHook(() => useGeolocation());
+    await waitFor(() => expect(result.current.state).toBe("denied"));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
   });
 });
