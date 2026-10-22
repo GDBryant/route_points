@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { can as canDo, type Action } from "@/features/adventures/permissions";
 import {
   getAdventure,
   myRole,
@@ -39,14 +40,16 @@ export function useAdventure({
     }
   }, [user, id]);
 
-  const isEditor = !guest && (role === "owner" || role === "editor");
+  const can = useCallback(
+    (a: Action) => !guest && canDo(role, a),
+    [guest, role],
+  );
   return {
     guest,
     adv,
     setAdv,
     role,
-    isEditor,
-    isOwner: role === "owner",
+    can,
     snapRadius,
     setSnapRadius,
   };

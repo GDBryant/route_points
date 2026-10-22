@@ -48,14 +48,17 @@ function MapPageBody() {
   const [params] = useSearchParams();
   const { user, profile } = useAuth();
   const token = params.get("token");
-  const { guest, adv, setAdv, isEditor, isOwner, snapRadius, setSnapRadius } =
-    useAdventure({ id, token, user });
+  const { guest, adv, setAdv, can, snapRadius, setSnapRadius } = useAdventure({
+    id,
+    token,
+    user,
+  });
   const exit = () => navigate(guest ? "/" : "/adventures");
   const { state, request, posRef } = useGeoStatus();
-  const { points, refresh } = usePoints(
+  const { points } = usePoints(
     guest ? { token: token! } : { adventureId: id },
   );
-  const { routes, refresh: refreshRoutes } = useRoutes(
+  const { routes } = useRoutes(
     guest ? { token: token! } : { adventureId: id },
   );
   const [tab, setTab] = useState<Tab>("map");
@@ -69,13 +72,11 @@ function MapPageBody() {
     () => localStorage.getItem("sharePos") !== "off",
   );
 
-  const move = useMovePoint({ adventureId: id, setFlyTo, refresh });
+  const move = useMovePoint({ adventureId: id, setFlyTo });
   const flow = useRecordingFlow({
     adventureId: id,
     points,
     snapRadius,
-    refreshPoints: refresh,
-    refreshRoutes,
   });
   const sync = useSync();
   const self =
@@ -89,7 +90,7 @@ function MapPageBody() {
   const { others, online } = usePositions({
     adventureId: id,
     token: guest ? token : null,
-    publish: isEditor && sharePos,
+    publish: can("sharePosition") && sharePos,
     self,
     posRef,
   });
@@ -113,7 +114,6 @@ function MapPageBody() {
       started_at: r.started_at ?? undefined,
       ended_at: r.ended_at,
     });
-    refreshRoutes();
     setSelectedRoute({ ...r, ...patch });
   };
 
@@ -145,28 +145,12 @@ function MapPageBody() {
       id,
       adv,
       guest,
-      isEditor,
-      isOwner,
+      can,
       snapRadius,
       points,
       routes,
-      refresh: () => {
-        refresh();
-        refreshRoutes();
-      },
     }),
-    [
-      id,
-      adv,
-      guest,
-      isEditor,
-      isOwner,
-      snapRadius,
-      points,
-      routes,
-      refresh,
-      refreshRoutes,
-    ],
+    [id, adv, guest, can, snapRadius, points, routes],
   );
   const banner =
     guest ||
@@ -204,7 +188,7 @@ function MapPageBody() {
           headingUp={headingUp}
           onMarkerTap={setSelected}
           onRouteTap={setSelectedRoute}
-          onLongPress={isEditor ? onLongPress : undefined}
+          onLongPress={can("addPoint") ? onLongPress : undefined}
           movingId={move.moving?.id ?? null}
           onCenterChange={move.onCenterChange}
           flyTo={flyTo}
@@ -214,13 +198,13 @@ function MapPageBody() {
           <div className="panel overlay">
             <PointsList
               points={points}
-              isEditor={isEditor}
+              isEditor={can("editPoint")}
               onTap={(p) => {
                 setFlyTo({ lat: p.lat, lng: p.lng, t: Date.now() });
                 setTab("map");
               }}
               onMove={(p, dir) => swapSeq(id, points, p, dir)}
-              onDelete={isEditor ? onDelete : undefined}
+              onDelete={can("deletePoint") ? onDelete : undefined}
             />
           </div>
         )}
@@ -238,7 +222,7 @@ function MapPageBody() {
                   });
                 setTab("map");
               }}
-              onDelete={isEditor ? onRouteDelete : undefined}
+              onDelete={can("deleteRoute") ? onRouteDelete : undefined}
             />
           </div>
         )}
@@ -247,7 +231,6 @@ function MapPageBody() {
             adventureId={id}
             others={others}
             online={online}
-            isOwner={isOwner}
             onShare={guest ? undefined : () => setSheet("share")}
             onFly={(lat, lng) => {
               setFlyTo({ lat, lng, t: Date.now() });
@@ -258,7 +241,9 @@ function MapPageBody() {
 
         {tab === "map" && (
           <MapControls
-            showEditorFabs={isEditor && !adding && !recording && !finishing}
+            showEditorFabs={
+              can("addPoint") && !adding && !recording && !finishing
+            }
             onAddHere={flow.addHere}
             onRecord={flow.openRecord}
             onSettings={() => setSheet("settings")}
@@ -275,13 +260,13 @@ function MapPageBody() {
         {selected && !adding && (
           <PointDetailSheet
             point={selected}
-            isEditor={isEditor}
+            isEditor={can("editPoint")}
             onEdit={(p) => {
               setSelected(null);
               flow.openAdd(p.lat, p.lng, null, { initial: p });
             }}
             onMove={
-              isEditor
+              can("editPoint")
                 ? (p) => {
                     setSelected(null);
                     move.startMove(p);
@@ -301,7 +286,7 @@ function MapPageBody() {
           <RouteDetailSheet
             route={selectedRoute}
             points={points}
-            isEditor={isEditor}
+            isEditor={can("editRoute")}
             onUpdate={onRouteUpdate}
             onDelete={onRouteDelete}
             onClose={() => setSelectedRoute(null)}

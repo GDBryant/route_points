@@ -24,14 +24,10 @@ export function useRecordingFlow({
   adventureId,
   points,
   snapRadius,
-  refreshPoints,
-  refreshRoutes,
 }: {
   adventureId: string;
   points: Point[];
   snapRadius: number;
-  refreshPoints: () => void;
-  refreshRoutes: () => void;
 }) {
   const posRef = usePositionRef();
   const recorder = useRecorder(posRef, points, snapRadius);
@@ -78,7 +74,6 @@ export function useRecordingFlow({
     const wasEnd = endRouteAt;
     setAdding(null);
     setEndRouteAt(false);
-    refreshPoints();
     if (adding.role === "start" && saved?.id) {
       recorder.setFromPoint(saved.id);
       const r = recorder.route;
@@ -141,7 +136,6 @@ export function useRecordingFlow({
     setFinishing(null);
     setRecording(false);
     recorder.finishDone();
-    refreshRoutes();
   };
 
   const onStart = async (mode: "manual" | "auto", s: number | null) => {

@@ -26,7 +26,7 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 - `lib/entity.ts`: `defineEntity<T>({ table, kindUpsert, kindDelete, list, listByToken, subscribe, applyEvent?, mergeRemote?, ownsItem? })` → `{ syncFromServer, remove, useEntity }`. `useEntity` handles token (guest) vs Dexie (member) reads. `saveLocal` stays per-feature (payload shapes differ).
 - `points/repo.ts` → `pointEntity` (`applyEvent` put/delete), `routes/repo.ts` → `routeEntity` (`mergeRemote` keeps local coords, `ownsItem` also matches `add_waypoints`). `usePoints`/`useRoutes` are 6-line wrappers.
 - Outbox registry: `registerOutboxHandler(kind, { run, reconcile?, refs?, latestWins? })` + `rewriteIds(from, to)`; handlers live in `{points,routes,live}/sync.ts`, side-effect-imported from `main.tsx` and each `repo.ts`. `sync/outbox.ts` imports no feature code.
-- `map/AdventureContext.tsx`: `{ id, adv, guest, isEditor, isOwner, snapRadius, points, routes, refresh }`; `AdventureSheets` reads it (6 props instead of 13). Feature-level sheets stay prop-driven (tested standalone).
+- `map/AdventureContext.tsx`: `{ id, adv, guest, can, snapRadius, points, routes }`; `AdventureSheets` reads it (6 props instead of 13). Feature-level sheets stay prop-driven (tested standalone).
 - Tests: `lib/entity.test.ts`, +2 routes repo, +1 outbox (unregistered kind → failed). 153 unit tests.
 
 ## Phase 3 — Render performance (DONE)
@@ -39,10 +39,10 @@ Order: 1 → 2 → 3 → 4. Each phase: tests first, behaviour preserved, versio
 ## Phase 4 — Cross-cutting infra
 
 - `lib/prefs.ts`: typed `usePref(key)` over `localStorage` (today scattered in `MapPage`, `RecordSheet`, `useGeolocation`).
-- `permissions.ts`: `can(role, action)` replacing ad-hoc `isEditor`/`isOwner`.
+- DONE 2026-10-22 (v0.3.14): `adventures/permissions.ts` `can(role, action)`; `useAdventure`/ctx expose `can(action)`; leaf sheets keep boolean props.
 - `adventure.settings jsonb` migration for per-adventure options (snap radius, units, kinds…).
 - CSS Modules per component; tokens stay in `index.css` (700 lines flat today).
-- Reads via Dexie `liveQuery` only; drop manual `refresh()` calls.
+- DONE 2026-10-22 (v0.3.14): reads via Dexie `liveQuery` only; manual `refresh()` calls dropped.
 
 ## Phase 5 — Quality gates
 

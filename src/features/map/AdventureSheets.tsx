@@ -27,29 +27,21 @@ export default function AdventureSheets({
   onSaved: (snap: number, name: string) => void;
   onExit: () => void;
 }) {
-  const {
-    id: adventureId,
-    adv,
-    isOwner,
-    isEditor,
-    points,
-    routes,
-    refresh: onRefresh,
-  } = useAdventureCtx();
+  const { id: adventureId, adv, can, points, routes } = useAdventureCtx();
   return (
     <>
       {sheet === "settings" && adv && (
         <AdventureSettingsSheet
           adventure={adv}
-          isOwner={isOwner}
+          isOwner={can("editSettings")}
           onSaved={onSaved}
           sharePos={sharePos}
-          onToggleShare={isEditor ? onToggleShare : undefined}
+          onToggleShare={can("sharePosition") ? onToggleShare : undefined}
           onExportGpx={async () => {
             await shareGpx(adv?.name ?? "adventure", points, routes);
             setSheet(null);
           }}
-          onImportGpx={isEditor ? () => setSheet("gpx") : undefined}
+          onImportGpx={can("importGpx") ? () => setSheet("gpx") : undefined}
           onShare={() => setSheet("share")}
           onOfflineMaps={() => setSheet("tiles")}
           onExit={onExit}
@@ -67,9 +59,8 @@ export default function AdventureSheets({
         {sheet === "gpx" && (
           <GpxSheet
             adventureId={adventureId}
-            isEditor={isEditor}
+            isEditor={can("importGpx")}
             onClose={() => setSheet(null)}
-            onDone={onRefresh}
           />
         )}
         {sheet === "tiles" && (

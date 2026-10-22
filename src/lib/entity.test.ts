@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "./db";
 import { defineEntity, type EntityEvent } from "./entity";
 import { routeEntity } from "@/features/routes/repo";
+import { listRoutes } from "@/features/routes/api";
 
 vi.mock("@/features/routes/api", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/features/routes/api")>();
@@ -71,5 +72,32 @@ describe("entity layer", () => {
     await waitFor(() => expect(list).toHaveBeenCalledTimes(1));
     act(() => cb({ eventType: "INSERT" }));
     await waitFor(() => expect(list).toHaveBeenCalledTimes(2));
+  });
+
+  it("local Dexie write updates rows without re-listing from server", async () => {
+    const { result } = renderHook(() =>
+      routeEntity.useEntity({ adventureId: "adv1" }),
+    );
+    await waitFor(() => expect(result.current.rows).toHaveLength(1));
+    const calls = vi.mocked(listRoutes).mock.calls.length;
+    await act(() =>
+      db.routes.put({
+        id: "loc1",
+        adventure_id: "adv1",
+        client_id: "loc1",
+        name: "local",
+        from_point_id: null,
+        to_point_id: null,
+        direction: "both",
+        mode: "manual",
+        interval_s: null,
+        started_at: null,
+        ended_at: null,
+        coords: [],
+      }),
+    );
+    await waitFor(() => expect(result.current.rows).toHaveLength(2));
+    expect(result.current.rows.map((r) => r.name)).toContain("local");
+    expect(vi.mocked(listRoutes).mock.calls.length).toBe(calls);
   });
 });

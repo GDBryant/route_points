@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import type { Table } from "dexie";
 import { db, type OutboxItem, type OutboxKind } from "./db";
@@ -80,14 +80,13 @@ export function defineEntity<T extends { id: string; client_id?: string }>(
   function useEntity(opts: { adventureId?: string; token?: string }) {
     const [tokenRows, setTokenRows] = useState<T[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [tick, setTick] = useState(0);
 
     const localRows = useLiveQuery(
       () =>
         opts.adventureId
           ? def.table.where("adventure_id").equals(opts.adventureId).toArray()
           : Promise.resolve([] as (T & { adventure_id: string })[]),
-      [opts.adventureId, tick],
+      [opts.adventureId],
       [] as T[],
     );
 
@@ -103,9 +102,7 @@ export function defineEntity<T extends { id: string; client_id?: string }>(
       if (!opts.adventureId) return;
       const adventureId = opts.adventureId;
       let active = true;
-      syncFromServer(adventureId)
-        .then(() => active && setTick((t) => t + 1))
-        .catch((e) => active && setError(e.message));
+      syncFromServer(adventureId).catch((e) => active && setError(e.message));
 
       const apply = def.applyEvent ?? ((id: string) => syncFromServer(id));
       const unsub = def.subscribe(adventureId, (e) => {
@@ -117,20 +114,9 @@ export function defineEntity<T extends { id: string; client_id?: string }>(
       };
     }, [opts.adventureId]);
 
-    const refresh = useCallback(() => {
-      if (opts.adventureId)
-        syncFromServer(opts.adventureId).catch((e) => setError(e.message));
-      else if (opts.token)
-        def
-          .listByToken(opts.token)
-          .then(setTokenRows)
-          .catch((e) => setError(e.message));
-    }, [opts.adventureId, opts.token]);
-
     return {
       rows: opts.adventureId ? localRows : tokenRows,
       error,
-      refresh,
     };
   }
 

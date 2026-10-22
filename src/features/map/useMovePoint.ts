@@ -6,11 +6,9 @@ import type { FlyTarget } from "./MapView";
 export function useMovePoint({
   adventureId,
   setFlyTo,
-  refresh,
 }: {
   adventureId: string;
   setFlyTo: (t: FlyTarget) => void;
-  refresh: () => void;
 }) {
   const [moving, setMoving] = useState<Point | null>(null);
   const [moveTo, setMoveTo] = useState<{ lat: number; lng: number } | null>(
@@ -36,7 +34,6 @@ export function useMovePoint({
     );
     setMoving(null);
     setMoveTo(null);
-    refresh();
   };
 
   const cancel = () => {

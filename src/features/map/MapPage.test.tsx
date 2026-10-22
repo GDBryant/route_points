@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import MapPage from "./MapPage";
 import { savePointLocal } from "@/features/points/repo";
 import { saveRouteLocal } from "@/features/routes/repo";
-import { listMembers } from "@/features/adventures/api";
+import { listMembers, listKnownUsers } from "@/features/adventures/api";
 import { nearbyOsmName } from "@/features/points/osmName";
 import type { Point } from "@/features/points/api";
 import type { GeoPosition } from "@/features/tracking/useGeolocation";
@@ -20,8 +20,6 @@ const ctl = vi.hoisted(() => ({
   user: null as { id: string; email: string } | null,
   role: "owner" as string | null,
   points: [] as Point[],
-  refreshPoints: vi.fn(),
-  refreshRoutes: vi.fn(),
 }));
 
 const POS: GeoPosition = {
@@ -112,6 +110,15 @@ vi.mock("@/features/adventures/api", async (importOriginal) => {
     }),
     myRole: vi.fn(() => Promise.resolve(ctl.role)),
     touchAdventure: vi.fn().mockResolvedValue(undefined),
+    listKnownUsers: vi.fn().mockResolvedValue([
+      {
+        user_id: "u3",
+        display_name: "Carol",
+        colour: "#0f0",
+        role: "viewer",
+      },
+    ]),
+    addMember: vi.fn().mockResolvedValue(undefined),
     listMembers: vi.fn().mockResolvedValue([
       {
         user_id: "u2",
@@ -127,12 +134,11 @@ vi.mock("@/features/points/usePoints", () => ({
   usePoints: () => ({
     points: ctl.points,
     error: null,
-    refresh: ctl.refreshPoints,
   }),
 }));
 
 vi.mock("@/features/routes/useRoutes", () => ({
-  useRoutes: () => ({ routes: [], error: null, refresh: ctl.refreshRoutes }),
+  useRoutes: () => ({ routes: [], error: null }),
 }));
 
 vi.mock("@/features/points/repo", () => ({
@@ -233,6 +239,15 @@ async function renderOwner(opts: { position?: GeoPosition | null } = {}) {
   await screen.findByText("⚙");
 }
 
+async function renderMember(role: string) {
+  ctl.role = role;
+  ctl.user = { id: "u1", email: "me@x.com" };
+  ctl.position = POS;
+  renderPage();
+  await waitFor(() => expect(listMembers).not.toHaveBeenCalled());
+  await screen.findByText("Points");
+}
+
 describe("MapPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -274,7 +289,6 @@ describe("MapPage", () => {
         expect.objectContaining({ lat: 0, lng: 0, name: "My point" }),
       ),
     );
-    expect(ctl.refreshPoints).toHaveBeenCalled();
   });
 
   it("long-press opens AddPointSheet at pressed coords", async () => {
@@ -405,6 +419,44 @@ describe("MapPage", () => {
       "adv1",
       expect.objectContaining({ client_id: "p2", seq: 1 }),
     );
+  });
+
+  it("editor: editor FABs, no Add people, settings inputs disabled", async () => {
+    await renderMember("editor");
+    expect(await screen.findByText("+ Point")).toBeInTheDocument();
+    expect(screen.getByText("Record")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Members"));
+    expect(await screen.findByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByText("Add people")).toBeNull();
+    expect(listKnownUsers).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Map"));
+    fireEvent.click(await screen.findByText("⚙"));
+    expect(
+      await screen.findByLabelText(/Name/, { selector: "input" }),
+    ).toBeDisabled();
+  });
+
+  it("owner: Add people lists known users", async () => {
+    await renderOwner();
+    fireEvent.click(screen.getByText("Members"));
+    expect(await screen.findByText("Add people")).toBeInTheDocument();
+    expect(screen.getByText("Carol")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Map"));
+    fireEvent.click(await screen.findByText("⚙"));
+    expect(
+      await screen.findByLabelText(/Name/, { selector: "input" }),
+    ).toBeEnabled();
+  });
+
+  it("viewer: no editor FABs, no long-press, no delete in lists", async () => {
+    await renderMember("viewer");
+    expect(screen.queryByText("+ Point")).toBeNull();
+    expect(screen.queryByText("Record")).toBeNull();
+    fireEvent.click(screen.getByTestId("longpress"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByText("Points"));
+    expect(await screen.findByText("Obstacle 1")).toBeInTheDocument();
+    expect(screen.queryByText("Delete")).toBeNull();
   });
 
   it("gear opens settings; Share adventure opens share sheet", async () => {

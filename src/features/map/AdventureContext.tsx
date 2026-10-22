@@ -2,17 +2,16 @@ import { createContext, useContext } from "react";
 import type { Point } from "@/features/points/api";
 import type { RouteRow } from "@/features/routes/api";
 import type { AdvInfo } from "./useAdventure";
+import type { Action } from "@/features/adventures/permissions";
 
 export interface AdventureCtx {
   id: string;
   adv: AdvInfo | null;
   guest: boolean;
-  isEditor: boolean;
-  isOwner: boolean;
+  can: (a: Action) => boolean;
   snapRadius: number;
   points: Point[];
   routes: RouteRow[];
-  refresh: () => void;
 }
 
 export const AdventureContext = createContext<AdventureCtx | null>(null);

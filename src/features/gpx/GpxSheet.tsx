@@ -7,12 +7,10 @@ export default function GpxSheet({
   adventureId,
   isEditor,
   onClose,
-  onDone,
 }: {
   adventureId: string;
   isEditor: boolean;
   onClose: () => void;
-  onDone: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{
@@ -60,7 +58,6 @@ export default function GpxSheet({
       if (waypoints.length) await queueWaypoints(route.client_id, waypoints);
     }
     setBusy(false);
-    onDone();
     onClose();
   };
 

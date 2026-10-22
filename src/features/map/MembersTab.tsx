@@ -7,23 +7,24 @@ import {
 } from "@/features/adventures/api";
 import { useAuth } from "@/features/auth/useAuth";
 import type { LivePos } from "@/features/live/usePositions";
+import { useAdventureCtx } from "./AdventureContext";
 
 export default function MembersTab({
   adventureId,
   others,
   online,
-  isOwner,
   onShare,
   onFly,
 }: {
   adventureId: string;
   others: Map<string, LivePos>;
   online: Set<string>;
-  isOwner: boolean;
   onShare?: () => void;
   onFly: (lat: number, lng: number) => void;
 }) {
   const { user } = useAuth();
+  const { can } = useAdventureCtx();
+  const canManage = can("manageMembers");
   const [members, setMembers] = useState<Member[]>([]);
   const [known, setKnown] = useState<Member[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +42,11 @@ export default function MembersTab({
   }, [user, adventureId, load]);
 
   useEffect(() => {
-    if (isOwner && user && adventureId)
+    if (canManage && user && adventureId)
       listKnownUsers()
         .then(setKnown)
         .catch(() => {});
-  }, [isOwner, user, adventureId]);
+  }, [canManage, user, adventureId]);
 
   const addable = known.filter(
     (k) => !members.some((m) => m.user_id === k.user_id),
@@ -77,7 +78,7 @@ export default function MembersTab({
           </li>
         ))}
       </ul>
-      {isOwner && addable.length > 0 && (
+      {canManage && addable.length > 0 && (
         <>
           <h3>Add people</h3>
           <ul className="list">

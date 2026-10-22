@@ -16,12 +16,7 @@ const gpxXml = garminGpx;
 describe("GpxSheet", () => {
   it("shows preview counts for a valid gpx", async () => {
     render(
-      <GpxSheet
-        adventureId="a1"
-        isEditor={true}
-        onClose={vi.fn()}
-        onDone={vi.fn()}
-      />,
+      <GpxSheet adventureId="a1" isEditor={true} onClose={vi.fn()} />,
     );
     const input = document.querySelector(
       "input[type=file]",
@@ -33,14 +28,23 @@ describe("GpxSheet", () => {
     );
   });
 
+  it("viewer sees 'Viewers cannot import' and no Import", async () => {
+    render(<GpxSheet adventureId="a1" isEditor={false} onClose={vi.fn()} />);
+    const input = document.querySelector(
+      "input[type=file]",
+    ) as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([gpxXml], "t.gpx")] },
+    });
+    expect(
+      await screen.findByText("Viewers cannot import"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Import")).toBeNull();
+  });
+
   it("shows error for invalid gpx", async () => {
     render(
-      <GpxSheet
-        adventureId="a1"
-        isEditor={true}
-        onClose={vi.fn()}
-        onDone={vi.fn()}
-      />,
+      <GpxSheet adventureId="a1" isEditor={true} onClose={vi.fn()} />,
     );
     const input = document.querySelector(
       "input[type=file]",
