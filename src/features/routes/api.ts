@@ -59,8 +59,6 @@ export async function listRoutesByToken(token: string): Promise<RouteRow[]> {
     client_id: "",
     mode: "",
     interval_s: null,
-    started_at: null,
-    ended_at: null,
   }));
 }
 

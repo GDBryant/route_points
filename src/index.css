@@ -72,6 +72,11 @@ input {
   margin: 0 0 16px;
 }
 
+.routes-unit {
+  text-align: right;
+  margin-bottom: 4px;
+}
+
 .card {
   display: flex;
   justify-content: space-between;

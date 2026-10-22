@@ -39,3 +39,34 @@ export function routeLengthM(coords: [number, number][]): number {
   }
   return d;
 }
+
+export function routeDurationS(r: {
+  started_at: string | null;
+  ended_at: string | null;
+}): number | null {
+  if (!r.started_at || !r.ended_at) return null;
+  const s =
+    (new Date(r.ended_at).getTime() - new Date(r.started_at).getTime()) / 1000;
+  return s > 0 ? s : null;
+}
+
+export function fmtDistance(m: number): string {
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(m < 10000 ? 2 : 1)} km`;
+}
+
+export function fmtDuration(s: number): string {
+  const t = Math.round(s);
+  const h = Math.floor(t / 3600);
+  const min = Math.floor((t % 3600) / 60);
+  const sec = t % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(min)}:${pad(sec)}` : `${min}:${pad(sec)}`;
+}
+
+export function fmtSpeed(m: number, s: number, pace: boolean): string {
+  if (s <= 0 || m <= 0) return "–";
+  if (!pace) return `${((m / s) * 3.6).toFixed(1)} km/h`;
+  const spk = Math.round((s / m) * 1000);
+  return `${Math.floor(spk / 60)}:${String(spk % 60).padStart(2, "0")} /km`;
+}
