@@ -194,6 +194,7 @@ export default function MapView({
   movingId,
   onCenterChange,
   flyTo,
+  routeHl,
 }: {
   points?: Point[];
   routes?: RouteRow[];
@@ -206,6 +207,7 @@ export default function MapView({
   movingId?: string | null;
   onCenterChange?: (lat: number, lng: number) => void;
   flyTo?: FlyTarget | null;
+  routeHl?: { id: string; t: number } | null;
 }) {
   const { error } = useGeoStatus();
   const [initial] = useState(loadView);
@@ -249,6 +251,7 @@ export default function MapView({
             from={byId.get(r.from_point_id ?? "")}
             to={byId.get(r.to_point_id ?? "")}
             onTap={onRouteTap}
+            highlightT={routeHl?.id === r.id ? routeHl.t : undefined}
           />
         ))}
         {others.map((o) => (

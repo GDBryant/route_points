@@ -17,6 +17,8 @@ export default function AdventureSheets({
   setSheet,
   sharePos,
   onToggleShare,
+  zoomRoute,
+  onToggleZoomRoute,
   onSaved,
   onExit,
 }: {
@@ -24,6 +26,8 @@ export default function AdventureSheets({
   setSheet: (s: Sheet | null) => void;
   sharePos: boolean;
   onToggleShare?: () => void;
+  zoomRoute: boolean;
+  onToggleZoomRoute: () => void;
   onSaved: (snap: number, name: string) => void;
   onExit: () => void;
 }) {
@@ -37,6 +41,8 @@ export default function AdventureSheets({
           onSaved={onSaved}
           sharePos={sharePos}
           onToggleShare={can("sharePosition") ? onToggleShare : undefined}
+          zoomRoute={zoomRoute}
+          onToggleZoomRoute={onToggleZoomRoute}
           onExportGpx={async () => {
             await shareGpx(adv?.name ?? "adventure", points, routes);
             setSheet(null);

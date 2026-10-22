@@ -56,7 +56,7 @@ export default function RoutesList({
           <li key={r.id} className="card">
             <button className="linklike" onClick={() => onTap(r)}>
               <strong>{label(r)}</strong>
-              <span className="muted"> {stats(r)}</span>
+              <span className="muted block">{stats(r)}</span>
             </button>
             {onDelete && (
               <button

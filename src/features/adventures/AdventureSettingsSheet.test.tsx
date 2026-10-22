@@ -16,6 +16,8 @@ describe("AdventureSettingsSheet", () => {
         adventure={adventure}
         isOwner
         onSaved={vi.fn()}
+        zoomRoute={true}
+        onToggleZoomRoute={vi.fn()}
         onShare={onShare}
         onExit={vi.fn()}
         onClose={vi.fn()}
@@ -31,6 +33,8 @@ describe("AdventureSettingsSheet", () => {
         adventure={adventure}
         isOwner
         onSaved={vi.fn()}
+        zoomRoute={true}
+        onToggleZoomRoute={vi.fn()}
         onExit={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -45,6 +49,8 @@ describe("AdventureSettingsSheet", () => {
         adventure={adventure}
         isOwner
         onSaved={vi.fn()}
+        zoomRoute={true}
+        onToggleZoomRoute={vi.fn()}
         onExit={onExit}
         onClose={vi.fn()}
       />,
@@ -59,6 +65,8 @@ describe("AdventureSettingsSheet", () => {
         adventure={adventure}
         isOwner
         onSaved={vi.fn()}
+        zoomRoute={true}
+        onToggleZoomRoute={vi.fn()}
         onExit={vi.fn()}
         onClose={vi.fn()}
       />,

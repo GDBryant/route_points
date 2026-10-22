@@ -33,6 +33,7 @@ import RouteDetailSheet, {
 } from "@/features/routes/RouteDetailSheet";
 import RoutesList from "@/features/routes/RoutesList";
 import { boundsOf } from "@/features/tiles/tileMath";
+import { useLocalBool } from "@/lib/useLocalBool";
 
 export default function MapPage() {
   return (
@@ -64,13 +65,13 @@ function MapPageBody() {
   const [tab, setTab] = useState<Tab>("map");
   const [selected, setSelected] = useState<Point | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
+  const [routeHl, setRouteHl] = useState<{ id: string; t: number } | null>(null);
   const [flyTo, setFlyTo] = useState<FlyTarget | null>(null);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [headingUp, setHeadingUp] = useState(false);
   const [navTarget, setNavTarget] = useState<Point | null>(null);
-  const [sharePos, setSharePos] = useState(
-    () => localStorage.getItem("sharePos") !== "off",
-  );
+  const [sharePos, setSharePos] = useLocalBool("sharePos", true);
+  const [zoomRoute, setZoomRoute] = useLocalBool("zoomRoute", true);
 
   const move = useMovePoint({ adventureId: id, setFlyTo });
   const flow = useRecordingFlow({
@@ -95,6 +96,16 @@ function MapPageBody() {
     posRef,
   });
   const othersArr = useMemo(() => [...others.values()], [others]);
+
+  const focusRoute = (r: RouteRow, flyToStart = false) => {
+    setRouteHl({ id: r.id, t: Date.now() });
+    const b = zoomRoute
+      ? boundsOf([], [r])
+      : flyToStart && r.coords.length
+        ? { lat: r.coords[0][1], lng: r.coords[0][0] }
+        : null;
+    if (b) setFlyTo({ ...b, t: Date.now() });
+  };
 
   const onDelete = async (p: Point) => {
     await removePoint(p);
@@ -133,11 +144,7 @@ function MapPageBody() {
     [openAdd],
   );
 
-  const toggleSharePos = () => {
-    const next = !sharePos;
-    setSharePos(next);
-    localStorage.setItem("sharePos", next ? "on" : "off");
-  };
+  const toggleSharePos = () => setSharePos(!sharePos);
 
   const { adding, finishing, recorder, recording } = flow;
   const ctx = useMemo<AdventureCtx>(
@@ -187,7 +194,11 @@ function MapPageBody() {
           others={othersArr}
           headingUp={headingUp}
           onMarkerTap={setSelected}
-          onRouteTap={setSelectedRoute}
+          onRouteTap={(r) => {
+            setSelectedRoute(r);
+            focusRoute(r);
+          }}
+          routeHl={routeHl}
           onLongPress={can("addPoint") ? onLongPress : undefined}
           movingId={move.moving?.id ?? null}
           onCenterChange={move.onCenterChange}
@@ -214,12 +225,7 @@ function MapPageBody() {
               routes={routes}
               points={points}
               onTap={(r) => {
-                if (r.coords.length)
-                  setFlyTo({
-                    lat: r.coords[0][1],
-                    lng: r.coords[0][0],
-                    t: Date.now(),
-                  });
+                focusRoute(r, true);
                 setTab("map");
               }}
               onDelete={can("deleteRoute") ? onRouteDelete : undefined}
@@ -351,6 +357,8 @@ function MapPageBody() {
           setSheet={setSheet}
           sharePos={sharePos}
           onToggleShare={toggleSharePos}
+          zoomRoute={zoomRoute}
+          onToggleZoomRoute={() => setZoomRoute(!zoomRoute)}
           onSaved={(snap, name) => {
             setSnapRadius(snap);
             if (adv) setAdv({ ...adv, name, snap_radius_m: snap });

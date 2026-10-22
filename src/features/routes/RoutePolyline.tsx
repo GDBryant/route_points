@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { Marker, Polyline } from "react-leaflet";
 import L from "leaflet";
 import type { RouteRow } from "./api";
@@ -12,12 +12,15 @@ export default memo(function RoutePolyline({
   from,
   to,
   onTap,
+  highlightT,
 }: {
   route: RouteRow;
   from?: Point | null;
   to?: Point | null;
   onTap?: (r: RouteRow) => void;
+  highlightT?: number;
 }) {
+  const ref = useRef<L.Polyline>(null);
   const coords = useMemo(
     () => withEndpoints(route.coords, from, to),
     [route.coords, from, to],
@@ -42,9 +45,30 @@ export default memo(function RoutePolyline({
     [arrows, route.direction],
   );
 
+  useEffect(() => {
+    const el = ref.current?.getElement() as SVGElement | undefined;
+    if (!highlightT || !el) return;
+    el.style.transition = "none";
+    el.style.stroke = "#8b0000";
+    void el.getBoundingClientRect();
+    const t1 = setTimeout(() => {
+      el.style.transition = "stroke 2s";
+      el.style.stroke = COLOUR;
+    }, 800);
+    const t2 = setTimeout(() => {
+      el.style.transition = "";
+      el.style.stroke = "";
+    }, 3000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [highlightT]);
+
   return (
     <>
       <Polyline
+        ref={ref}
         positions={positions}
         pathOptions={{ color: COLOUR, weight: 3 }}
         eventHandlers={{ click: () => onTap?.(route) }}

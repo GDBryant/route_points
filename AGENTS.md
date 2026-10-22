@@ -6,7 +6,8 @@ Mobile-first PWA for logging named location points and GPS routes between them d
 
 - HARD RULE: Be very brief in all aspects — replies, commit messages, docs, code. Result, reason, next step. No preamble, filler or recaps.
 - HARD RULE: No code comments unless asked. Compact code, no over-engineering.
-- Bump `version` in `package.json` on every code change pushed to `main` (shown in Settings → "Check for updates").
+- Prefer refactoring existing code over patching or bolting on functionality.
+- Bump `version` in `package.json` once per push to `main` (shown in Settings → "Check for updates"). Before bumping, compare with `git show origin/main:package.json`; if the local version is already ahead of origin, don't bump again.
 - Read `docs/ai_docs/` before working. Update `docs/ai_docs/decisions.md` when a design choice is made; `docs/ai_docs/progress.md` when a milestone lands.
 
 ## Stack

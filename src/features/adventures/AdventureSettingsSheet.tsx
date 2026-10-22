@@ -11,6 +11,8 @@ export default function AdventureSettingsSheet({
   onOfflineMaps,
   sharePos,
   onToggleShare,
+  zoomRoute,
+  onToggleZoomRoute,
   onExportGpx,
   onImportGpx,
   onExit,
@@ -23,6 +25,8 @@ export default function AdventureSettingsSheet({
   onOfflineMaps?: () => void;
   sharePos?: boolean;
   onToggleShare?: () => void;
+  zoomRoute: boolean;
+  onToggleZoomRoute: () => void;
   onExportGpx?: () => void;
   onImportGpx?: () => void;
   onExit: () => void;
@@ -81,6 +85,14 @@ export default function AdventureSettingsSheet({
             Share my position
           </label>
         )}
+        <label className="checkline">
+          <input
+            type="checkbox"
+            checked={zoomRoute}
+            onChange={onToggleZoomRoute}
+          />
+          Zoom to route when selected
+        </label>
         {onExportGpx && (
           <button type="button" onClick={onExportGpx}>
             Export GPX

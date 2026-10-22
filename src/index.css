@@ -104,6 +104,10 @@ input {
   font-size: 14px;
 }
 
+.block {
+  display: block;
+}
+
 .small {
   font-size: 0.85em;
 }
