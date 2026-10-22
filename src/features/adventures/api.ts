@@ -9,6 +9,7 @@ export interface Adventure {
   snap_radius_m: number;
   role: string;
   last_opened_at: string;
+  created_at: string;
 }
 
 export function shareUrl(token: string): string {
@@ -23,7 +24,7 @@ export async function listAdventures(): Promise<Adventure[]> {
   const { data, error } = await supabase
     .from("adventure_members")
     .select(
-      "role, last_opened_at, adventures(id, name, description, share_token, snap_radius_m)",
+      "role, last_opened_at, adventures(id, name, description, share_token, snap_radius_m, created_at)",
     )
     .eq("user_id", user.id)
     .order("last_opened_at", { ascending: false });

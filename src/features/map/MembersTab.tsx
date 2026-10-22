@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   addMember,
   listKnownUsers,
@@ -28,14 +28,17 @@ export default function MembersTab({
   const [known, setKnown] = useState<Member[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () =>
-    listMembers(adventureId)
-      .then(setMembers)
-      .catch((e) => setError(e.message));
+  const load = useCallback(
+    () =>
+      listMembers(adventureId)
+        .then(setMembers)
+        .catch((e) => setError(e.message)),
+    [adventureId],
+  );
 
   useEffect(() => {
     if (user && adventureId) load();
-  }, [user, adventureId]);
+  }, [user, adventureId, load]);
 
   useEffect(() => {
     if (isOwner && user && adventureId)

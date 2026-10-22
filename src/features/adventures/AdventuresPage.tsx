@@ -54,6 +54,9 @@ export default function AdventuresPage() {
             <Link to={`/a/${a.id}`}>
               <strong>{a.name}</strong>
               <span className="muted"> · {a.role}</span>
+              <div className="muted small">
+                {new Date(a.created_at).toLocaleDateString()}
+              </div>
             </Link>
             <button onClick={() => setShare(a)}>Share</button>
             {a.role === "owner" && (

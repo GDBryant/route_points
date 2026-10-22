@@ -99,6 +99,10 @@ input {
   font-size: 14px;
 }
 
+.small {
+  font-size: 0.85em;
+}
+
 .error {
   color: #c62828;
 }
