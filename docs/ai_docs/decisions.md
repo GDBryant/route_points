@@ -54,3 +54,4 @@
 | 2026-10-19 | `PositionProvider` inside `MapPage`; tick via `usePosition()`, handlers via `posRef`; `MapContainer` starts at `DEFAULT_CENTER` (FollowMe recentres) | 1 Hz GPS re-rendered whole map tree; oxlint `react/refs` forbids render-time ref reads                                         |
 | 2026-10-19 | Mitigate backgrounding while recording: re-acquire wake lock on visible, flush buffer on hidden, immediate drop on resume, keep-screen-on hint | web PWA has no background geolocation API (SW can't access GPS); real background tracking needs Capacitor + bg-geolocation plugin — deferred |
 | 2026-10-21 | Last map view persisted in localStorage key `lastView`, restored on open | reopening returns to where the user left off |
+| 2026-10-22 | Direct member add via owner-only `add_member` RPC (checks shared adventure); Share button in Members tab | matches members_insert policy; settings FAB hidden while recording so share must live elsewhere |

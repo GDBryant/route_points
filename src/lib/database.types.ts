@@ -632,6 +632,10 @@ export type Database = {
         Args: { geom1: unknown; geom2: unknown };
         Returns: boolean;
       };
+      add_member: {
+        Args: { aid: string; uid: string };
+        Returns: undefined;
+      };
       add_waypoints: {
         Args: { route_client_id: string; wps: Json };
         Returns: number;
@@ -864,6 +868,14 @@ export type Database = {
       join_adventure: {
         Args: { as_role?: string; token: string };
         Returns: string;
+      };
+      known_users: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          colour: string;
+          display_name: string;
+          user_id: string;
+        }[];
       };
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>;

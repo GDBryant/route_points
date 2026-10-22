@@ -31,3 +31,4 @@
 - 2026-10-19 MapPage refactor: characterisation tests (MapPage.test.tsx, 11 cases) then decomposed into hooks + components; behaviour preserved. v0.3.2.
 - 2026-10-19 Phase 2: `lib/entity.ts` defineEntity, outbox handler registry (sync no longer imports features), AdventureContext. 153 unit tests. v0.3.3.
 - 2026-10-19 Phase 3: PositionContext (1 Hz ticks no longer re-render MapPage), memo markers, lazy pages/sheets, manualChunks (798 kB → 266 kB main). 154 unit tests. v0.3.4.
+- 2026-10-22 Direct share: `known_users`/`add_member` RPCs (0008), owner "Add people" list + Share button in Members tab. v0.3.10.

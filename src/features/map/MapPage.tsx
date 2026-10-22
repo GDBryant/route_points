@@ -247,6 +247,8 @@ function MapPageBody() {
             adventureId={id}
             others={others}
             online={online}
+            isOwner={isOwner}
+            onShare={guest ? undefined : () => setSheet("share")}
             onFly={(lat, lng) => {
               setFlyTo({ lat, lng, t: Date.now() });
               setTab("map");

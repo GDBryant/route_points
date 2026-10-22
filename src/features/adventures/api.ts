@@ -109,6 +109,28 @@ export async function listMembers(adventureId: string): Promise<Member[]> {
   }));
 }
 
+export async function listKnownUsers(): Promise<Member[]> {
+  const { data, error } = await supabase.rpc("known_users");
+  if (error) throw error;
+  return (data ?? []).map((u) => ({
+    user_id: u.user_id,
+    role: "",
+    display_name: u.display_name ?? "",
+    colour: u.colour ?? "#1e88e5",
+  }));
+}
+
+export async function addMember(
+  adventureId: string,
+  userId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("add_member", {
+    aid: adventureId,
+    uid: userId,
+  });
+  if (error) throw error;
+}
+
 export async function getAdventure(id: string): Promise<{
   id: string;
   name: string;
