@@ -56,16 +56,14 @@ function MapPageBody() {
   });
   const exit = () => navigate(guest ? "/" : "/adventures");
   const { state, request, posRef } = useGeoStatus();
-  const { points } = usePoints(
-    guest ? { token: token! } : { adventureId: id },
-  );
-  const { routes } = useRoutes(
-    guest ? { token: token! } : { adventureId: id },
-  );
+  const { points } = usePoints(guest ? { token: token! } : { adventureId: id });
+  const { routes } = useRoutes(guest ? { token: token! } : { adventureId: id });
   const [tab, setTab] = useState<Tab>("map");
   const [selected, setSelected] = useState<Point | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<RouteRow | null>(null);
-  const [routeHl, setRouteHl] = useState<{ id: string; t: number } | null>(null);
+  const [routeHl, setRouteHl] = useState<{ id: string; t: number } | null>(
+    null,
+  );
   const [flyTo, setFlyTo] = useState<FlyTarget | null>(null);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [headingUp, setHeadingUp] = useState(false);
@@ -100,7 +98,12 @@ function MapPageBody() {
   const focusRoute = (r: RouteRow, flyToStart = false) => {
     setRouteHl({ id: r.id, t: Date.now() });
     const b = zoomRoute
-      ? boundsOf([], [r])
+      ? boundsOf(
+          points.filter(
+            (p) => p.id === r.from_point_id || p.id === r.to_point_id,
+          ),
+          [r],
+        )
       : flyToStart && r.coords.length
         ? { lat: r.coords[0][1], lng: r.coords[0][0] }
         : null;
