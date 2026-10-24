@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { RouteRow } from "./api";
 import type { Point } from "@/features/points/api";
-import { routeLengthM } from "./routeUtils";
+import { routeLengthM, withEndpoints } from "./routeUtils";
 
 export type RoutePatch = Pick<
   RouteRow,
@@ -106,7 +106,16 @@ export default function RouteDetailSheet({
       <h3>{route.name || "Route"}</h3>
       <p className="muted">
         {pointName(route.from_point_id)} → {pointName(route.to_point_id)} ·{" "}
-        {Math.round(routeLengthM(route.coords))} m · {route.coords.length}{" "}
+        {Math.round(
+          routeLengthM(
+            withEndpoints(
+              route.coords,
+              points.find((p) => p.id === route.from_point_id),
+              points.find((p) => p.id === route.to_point_id),
+            ),
+          ),
+        )}{" "}
+        m · {route.coords.length}{" "}
         waypoints
       </p>
       {isEditor &&

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import RoutesList from "./RoutesList";
 import type { RouteRow } from "./api";
+import type { Point } from "@/features/points/api";
 
 const route = {
   id: "r1",
@@ -48,5 +49,20 @@ describe("RoutesList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Toggle speed unit" }));
     expect(screen.getByText(/1\.11 km · 10:00 · 9:00 \/km/)).toBeTruthy();
     expect(localStorage.getItem("speedUnit")).toBe("pace");
+  });
+
+  it("includes endpoints in distance but not speed", () => {
+    localStorage.clear();
+    const linked = {
+      ...route,
+      from_point_id: "a",
+      to_point_id: "b",
+    } as unknown as RouteRow;
+    const points = [
+      { id: "a", name: "A", lat: 0, lng: -0.01 },
+      { id: "b", name: "B", lat: 0, lng: 0.02 },
+    ] as unknown as Point[];
+    render(<RoutesList routes={[linked]} points={points} onTap={vi.fn()} />);
+    expect(screen.getByText(/3\.34 km · 10:00 · 6\.7 km\/h/)).toBeTruthy();
   });
 });

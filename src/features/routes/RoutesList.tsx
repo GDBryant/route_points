@@ -7,6 +7,7 @@ import {
   fmtSpeed,
   routeDurationS,
   routeLengthM,
+  withEndpoints,
 } from "./routeUtils";
 
 export default function RoutesList({
@@ -23,15 +24,18 @@ export default function RoutesList({
   const [pace, setPace] = useState(
     () => localStorage.getItem("speedUnit") === "pace",
   );
-  const name = (id: string | null) =>
-    id ? (points.find((p) => p.id === id)?.name ?? "") : "";
+  const pt = (id: string | null) =>
+    id ? points.find((p) => p.id === id) : null;
+  const name = (id: string | null) => pt(id)?.name ?? "";
   const label = (r: RouteRow) =>
     r.name ||
     `${name(r.from_point_id) || "Start"} → ${name(r.to_point_id) || "End"}`;
   const stats = (r: RouteRow) => {
-    const d = routeLengthM(r.coords);
+    const d = routeLengthM(
+      withEndpoints(r.coords, pt(r.from_point_id), pt(r.to_point_id)),
+    );
     const t = routeDurationS(r);
-    return `${fmtDistance(d)} · ${t == null ? "–" : fmtDuration(t)} · ${fmtSpeed(d, t ?? 0, pace)}`;
+    return `${fmtDistance(d)} · ${t == null ? "–" : fmtDuration(t)} · ${fmtSpeed(routeLengthM(r.coords), t ?? 0, pace)}`;
   };
   return (
     <>
