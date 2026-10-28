@@ -1,4 +1,4 @@
-create extension if not exists postgis;
+create extension if not exists postgis with schema extensions;
 
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
