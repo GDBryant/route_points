@@ -91,6 +91,38 @@ RLS: editors (max 10, enforced by trigger) read/write; viewers read-only; anonym
 
 See `architecture.md` — 5 phases, status table at top. Phase 1 done (v0.3.2).
 
+## M8 Item shares — point / route invites (2026-10-28, planning, not built)
+
+Adventure sharing (`/join/:share_token`, whole adventure, join → editor if <10 else viewer) stays as is. Add sharing of a **single point** (Points tab) or **single route** (Routes tab) via an `invites` table.
+
+### Confirmed
+
+- Share target: one point or one route (route = waypoints + its from/to points). Whole-adventure share unchanged.
+- Scope: recipient sees **only** the shared item, not the rest of the adventure.
+- Two invite kinds, same link flow as today (guest view, or sign in with email → join): `editor` (add/edit rights) and `viewer` (read-only). ACL differs, flow identical.
+- Delivery: reuse `ShareSheet` (Web Share / WhatsApp / copy). "New email address" = recipient's mail app via the OS share sheet; no server-side email. "Existing friends" = `known_users` picker (as Members tab "Add people") with a role choice.
+- Model: `invites` table, not extra token columns — revocable, auditable, per-recipient.
+
+### Proposed model
+
+```
+invites  id uuid pk (= token), adventure_id, role (editor|viewer), point_id?, route_id? (check: exactly one),
+         email?, created_by, created_at, expires_at?, revoked_at?
+```
+
+- RPCs (security definer, `anon, authenticated`): `get_invite(token)` → adventure name, role, item stub; `get_invite_points(token)` / `get_invite_routes(token)` → scoped rows (route share returns route + its endpoint points); `join_by_invite(token)` (authenticated) → inserts/updates `adventure_members` with invite role (editor still capped at 10 → viewer).
+- Guest URL: `/a/:id?invite=<token>`; `useEntity` gains `listByInvite` alongside `listByToken`. Positions not fetched for invite guests.
+- `/join/:token` resolves `adventures.share_token` first, then `invites.id`, so one route serves both.
+- Create: `ShareSheet` gets an optional `item` + role toggle; point/route sheets get a Share button. Direct-to-friend: `add_member(aid, uid, role)` (extend existing RPC with role).
+
+### Open questions (decide before building)
+
+1. Scope after join: membership is adventure-wide today. Does a user who joins via a point invite see the whole adventure (simplest; scope = guest view only), or do we need `adventure_members.scope` (point_id/route_id) enforced in RLS for members too?
+2. Who may create invites: owner only (`manageMembers`) or editors too (new `share` action in `permissions.ts`)?
+3. Editor rights on a scoped share: edit only the shared item, or add points/routes anywhere? Depends on 1.
+4. Expiry default (none vs 30 d) and a UI to list/revoke invites (settings sheet?).
+5. Direct-to-friend with scope: insert member directly (ignores scope) vs create an invite row and share the link anyway.
+
 ## Open questions
 
-- None outstanding.
+- See M8 above.
